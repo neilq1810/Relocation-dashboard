@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Relocation Dashboard 🏔️</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0f1e;
+  --surface: rgba(255,255,255,0.06);
+  --surface-hover: rgba(255,255,255,0.10);
+  --border: rgba(255,255,255,0.10);
+  --border-strong: rgba(255,255,255,0.18);
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --primary: #38bdf8;
+  --accent: #34d399;
+  --good: #22c55e;
+  --ok: #eab308;
+  --poor: #f87171;
+  --gold: #f59e0b;
+  --r: 16px;
+  --rs: 10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(160deg,#0d1b2a 0%,#1a3a5c 50%,#1e4d3b 100%);
+  padding:2rem 1.25rem 2.5rem;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.header::after{
+  content:'⛰️';font-size:9rem;opacity:.04;
+  position:absolute;bottom:-1.5rem;right:-1rem;line-height:1;
+}
+.header-flags{font-size:1.75rem;margin-bottom:.5rem;letter-spacing:.25rem;}
+.header h1{
+  font-size:1.55rem;font-weight:800;
+  background:linear-gradient(135deg,#38bdf8,#34d399);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:.3rem;
+}
+.header-sub{color:var(--muted);font-size:.85rem;line-height:1.6;}
+.header-badge{
+  display:inline-flex;align-items:center;gap:.35rem;
+  margin-top:.75rem;padding:.3rem .75rem;
+  background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);
+  border-radius:20px;color:var(--primary);font-size:.75rem;font-weight:600;
+}
+
+/* ── STICKY CONTROLS ── */
+.controls{
+  position:sticky;top:0;z-index:50;
+  background:var(--bg);
+  border-bottom:1px solid var(--border);
+  padding:.75rem 1rem .5rem;
+}
+.weights-toggle{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:.65rem 1rem;border-radius:var(--rs);
+  font-size:.82rem;font-weight:500;cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:.6rem;transition:background .2s;
+}
+.weights-toggle:hover{background:var(--surface-hover);}
+.weights-panel{
+  display:none;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:var(--r);padding:.9rem;margin-bottom:.6rem;
+}
+.weights-panel.open{display:block;}
+.weight-row{display:flex;align-items:center;gap:.6rem;margin-bottom:.55rem;}
+.weight-emoji{font-size:.95rem;width:22px;text-align:center;flex-shrink:0;}
+.weight-lbl{font-size:.72rem;color:var(--muted);width:88px;flex-shrink:0;}
+.weight-slider{
+  flex:1;-webkit-appearance:none;appearance:none;
+  height:4px;border-radius:2px;background:var(--border);outline:none;
+}
+.weight-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:var(--primary);cursor:pointer;border:2px solid var(--bg);
+}
+.weight-val{font-size:.72rem;font-weight:700;color:var(--primary);width:16px;text-align:right;}
+.reset-btn{
+  background:transparent;border:1px solid var(--border);color:var(--muted);
+  padding:.35rem .75rem;border-radius:20px;font-size:.72rem;cursor:pointer;
+  margin-top:.35rem;
+}
+.reset-btn:hover{border-color:var(--border-strong);color:var(--text);}
+
+.filter-bar{
+  display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;
+  padding-bottom:.5rem;align-items:center;
+}
+.filter-bar::-webkit-scrollbar{display:none;}
+.pill{
+  padding:.35rem .8rem;border-radius:20px;font-size:.78rem;font-weight:500;
+  border:1px solid var(--border);background:var(--surface);color:var(--muted);
+  cursor:pointer;white-space:nowrap;transition:all .2s;flex-shrink:0;
+}
+.pill.active{background:var(--primary);color:#0a0f1e;border-color:var(--primary);}
+.sort-sel{
+  background:var(--surface);border:1px solid var(--border);color:var(--text);
+  padding:.35rem .5rem;border-radius:20px;font-size:.78rem;outline:none;
+  cursor:pointer;margin-left:auto;flex-shrink:0;
+}
+
+/* ── MAIN ── */
+main{padding:.9rem 1rem 4rem;}
+.results-note{
+  font-size:.72rem;color:var(--muted);
+  text-align:center;margin-bottom:.75rem;
+}
+.cards-grid{
+  display:grid;grid-template-columns:1fr;gap:.9rem;
+}
+@media(min-width:580px){.cards-grid{grid-template-columns:repeat(2,1fr);}}
+@media(min-width:880px){.cards-grid{grid-template-columns:repeat(3,1fr);}}
+
+/* ── CARD ── */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:1.1rem;cursor:pointer;
+  transition:transform .2s,background .2s,border-color .2s;
+  position:relative;
+}
+.card:hover{background:var(--surface-hover);transform:translateY(-2px);}
+.card.fav{border-color:var(--gold);}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.8rem;}
+.card-meta{flex:1;min-width:0;}
+.card-name-row{display:flex;align-items:center;gap:.45rem;margin-bottom:.15rem;}
+.card-flag{font-size:1.1rem;}
+.card-name{font-size:1.05rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card-region{font-size:.7rem;color:var(--muted);}
+
+/* Score ring */
+.ring-wrap{position:relative;width:52px;height:52px;flex-shrink:0;}
+.ring-wrap svg{transform:rotate(-90deg);}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:4.5;}
+.ring-fg{fill:none;stroke-width:4.5;stroke-linecap:round;transition:stroke-dashoffset .5s ease;}
+.ring-num{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;font-weight:700;
+}
+
+/* Commute badge */
+.commute-pill{
+  display:inline-flex;align-items:center;gap:.3rem;
+  background:rgba(56,189,248,.12);color:var(--primary);
+  padding:.22rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600;
+  margin-bottom:.8rem;
+}
+
+/* Criteria bars */
+.bars{display:flex;flex-direction:column;gap:.38rem;margin-bottom:.8rem;}
+.bar-row{display:flex;align-items:center;gap:.45rem;}
+.bar-lbl{font-size:.67rem;color:var(--muted);width:68px;flex-shrink:0;white-space:nowrap;overflow:hidden;}
+.bar-track{flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;}
+.bar-num{font-size:.64rem;color:var(--muted);width:12px;text-align:right;}
+
+/* Tags */
+.card-tags{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.8rem;}
+.tag{
+  font-size:.67rem;padding:.18rem .5rem;border-radius:8px;font-weight:500;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.tag-pro{background:rgba(34,197,94,.15);color:#4ade80;}
+.tag-con{background:rgba(248,113,113,.15);color:#fca5a5;}
+
+/* Card actions */
+.card-actions{display:flex;gap:.45rem;}
+.btn-detail{
+  flex:1;background:rgba(56,189,248,.12);color:var(--primary);
+  border:1px solid rgba(56,189,248,.25);padding:.55rem;
+  border-radius:var(--rs);font-size:.78rem;font-weight:600;cursor:pointer;
+  transition:background .2s;
+}
+.btn-detail:hover{background:rgba(56,189,248,.22);}
+.btn-fav{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--muted);padding:.55rem .7rem;border-radius:var(--rs);
+  font-size:.95rem;cursor:pointer;transition:all .2s;line-height:1;
+}
+.btn-fav.on{background:rgba(245,158,11,.12);border-color:var(--gold);color:var(--gold);}
+
+/* ── MODAL ── */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.65);z-index:100;
+  align-items:flex-end;justify-content:center;
+}
+.overlay.open{display:flex;}
+.sheet{
+  background:#101929;border-radius:22px 22px 0 0;
+  width:100%;max-width:680px;max-height:92vh;
+  display:flex;flex-direction:column;
+  animation:up .3s ease;
+}
+@keyframes up{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.sheet-handle{width:38px;height:4px;background:rgba(255,255,255,.18);border-radius:2px;margin:1rem auto .75rem;}
+.sheet-scroll{overflow-y:auto;flex:1;padding:0 1.25rem 2rem;}
+.sheet-scroll::-webkit-scrollbar{width:3px;}
+.sheet-scroll::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:2px;}
+
+.modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.9rem;}
+.modal-title{font-size:1.4rem;font-weight:800;}
+.modal-sub{font-size:.75rem;color:var(--muted);margin-top:.15rem;}
+.btn-close{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);width:34px;height:34px;border-radius:50%;
+  font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+
+/* Modal tabs */
+.modal-tabs{
+  display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;
+  margin-bottom:1rem;padding-bottom:.1rem;
+}
+.modal-tabs::-webkit-scrollbar{display:none;}
+.mtab{
+  padding:.4rem .8rem;border-radius:20px;font-size:.78rem;font-weight:500;
+  border:1px solid var(--border);background:var(--surface);color:var(--muted);
+  cursor:pointer;white-space:nowrap;transition:all .2s;flex-shrink:0;
+}
+.mtab.active{background:var(--primary);color:#0a0f1e;border-color:var(--primary);}
+
+/* Tab panes */
+.pane{display:none;}
+.pane.active{display:block;}
+
+/* Modal score section */
+.score-row{
+  display:flex;align-items:center;gap:1rem;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:1rem;margin-bottom:1rem;
+}
+.score-ring-lg{position:relative;width:80px;height:80px;flex-shrink:0;}
+.score-ring-lg svg{transform:rotate(-90deg);}
+.score-num-lg{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;font-weight:800;
+}
+.score-meta{flex:1;}
+.score-meta p{font-size:.8rem;color:var(--muted);margin-top:.2rem;}
+
+/* Highlight callout */
+.callout{
+  padding:.8rem .9rem;background:rgba(56,189,248,.07);
+  border-left:3px solid var(--primary);border-radius:0 var(--rs) var(--rs) 0;
+  font-size:.83rem;line-height:1.6;color:#cbd5e1;margin-bottom:1rem;
+}
+
+/* Section titles */
+.stitle{
+  font-size:.72rem;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;
+  margin:1rem 0 .5rem;
+}
+
+/* Full criteria bars */
+.full-bars{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;}
+.fbar-row{display:flex;align-items:center;gap:.75rem;}
+.fbar-lbl{font-size:.78rem;color:var(--muted);width:108px;flex-shrink:0;}
+.fbar-track{flex:1;height:7px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;}
+.fbar-fill{height:100%;border-radius:4px;}
+.fbar-num{font-size:.78rem;font-weight:600;width:28px;text-align:right;}
+
+/* Pros / cons */
+.pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem;}
+.pc-box{background:var(--surface);border-radius:var(--rs);padding:.75rem;}
+.pc-box h4{font-size:.72rem;font-weight:600;margin-bottom:.5rem;}
+.pc-box h4.g{color:var(--good);}
+.pc-box h4.r{color:var(--poor);}
+.pc-box li{
+  font-size:.72rem;line-height:1.55;color:#cbd5e1;
+  list-style:none;padding-left:.9rem;position:relative;margin-bottom:.2rem;
+}
+.pc-box li::before{position:absolute;left:0;}
+.pc-box.pros li::before{content:'✓';color:var(--good);}
+.pc-box.cons li::before{content:'✗';color:var(--poor);}
+
+/* Info grid */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem;}
+.info-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:.75rem;text-align:center;
+}
+.info-val{font-size:1.1rem;font-weight:700;margin-bottom:.15rem;}
+.info-lbl{font-size:.68rem;color:var(--muted);}
+
+/* Company tags */
+.companies{display:flex;flex-wrap:wrap;gap:.35rem;margin:.5rem 0 1rem;}
+.co-tag{
+  background:rgba(56,189,248,.09);color:var(--primary);
+  border:1px solid rgba(56,189,248,.2);
+  padding:.2rem .55rem;border-radius:8px;font-size:.72rem;font-weight:500;
+}
+
+/* Tip box */
+.tip{
+  background:var(--surface);border-radius:var(--rs);padding:.8rem;margin-top:.75rem;
+}
+.tip-lbl{font-size:.68rem;color:var(--muted);font-weight:600;margin-bottom:.4rem;}
+.tip p{font-size:.78rem;color:#cbd5e1;line-height:1.6;}
+
+/* Map link */
+.map-link{
+  display:block;background:rgba(52,211,153,.1);color:var(--accent);
+  border:1px solid rgba(52,211,153,.25);padding:.7rem;
+  border-radius:var(--rs);text-align:center;text-decoration:none;
+  font-size:.82rem;font-weight:600;margin-top:1rem;
+}
+
+/* Notes textarea */
+.notes-ta{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);color:var(--text);padding:.75rem;
+  font-size:.82rem;font-family:inherit;resize:none;min-height:100px;
+  outline:none;transition:border-color .2s;
+}
+.notes-ta:focus{border-color:var(--primary);}
+.notes-ta::placeholder{color:var(--muted);}
+
+/* Score colour helpers */
+.c-good{color:var(--good);}
+.c-ok{color:var(--ok);}
+.c-poor{color:var(--poor);}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="header">
+  <div class="header-flags">🇮🇪 ✈️ 🏔️</div>
+  <h1>Our Relocation Dashboard</h1>
+  <p class="header-sub">Ireland → Bavaria &amp; Austria<br>Finding the perfect home together</p>
+  <span class="header-badge">🚂 ADI Munich Office · 3 days/week · max 2 hours</span>
+</header>
+
+<!-- ═══ CONTROLS ═══ -->
+<div class="controls">
+  <button class="weights-toggle" id="wt-btn">
+    <span>⚙️&nbsp; Adjust Priorities</span>
+    <span id="wt-arrow">▼</span>
+  </button>
+  <div class="weights-panel" id="wt-panel"></div>
+
+  <div class="filter-bar">
+    <button class="pill active" data-filter="all">All</button>
+    <button class="pill" data-filter="DE">🇩🇪 Germany</button>
+    <button class="pill" data-filter="AT">🇦🇹 Austria</button>
+    <button class="pill" data-filter="fav">⭐ Favourites</button>
+    <select class="sort-sel" id="sort-sel">
+      <option value="score">Best Match</option>
+      <option value="commute">Shortest Commute</option>
+      <option value="cost">Cheapest First</option>
+      <option value="alps">Best Alps Access</option>
+      <option value="lakes">Best Lakes</option>
+      <option value="name">A–Z</option>
+    </select>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<main>
+  <div class="results-note" id="rn"></div>
+  <div class="cards-grid" id="grid"></div>
+</main>
+
+<!-- ═══ MODAL ═══ -->
+<div class="overlay" id="overlay">
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-scroll" id="sheet-scroll">
+      <div class="modal-hdr">
+        <div>
+          <div class="modal-title" id="m-title"></div>
+          <div class="modal-sub" id="m-sub"></div>
+        </div>
+        <button class="btn-close" id="btn-close">✕</button>
+      </div>
+      <div class="modal-tabs" id="m-tabs">
+        <button class="mtab active" data-tab="overview">Overview</button>
+        <button class="mtab" data-tab="jobs">💼 Jobs</button>
+        <button class="mtab" data-tab="dog">🐾 Dog</button>
+        <button class="mtab" data-tab="housing">🏠 Housing</button>
+        <button class="mtab" data-tab="transport">🚂 Transport</button>
+        <button class="mtab" data-tab="notes">📝 Notes</button>
+      </div>
+      <div id="m-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   DATA
+══════════════════════════════════════════ */
+const CRITERIA = [
+  {key:'commute',    emoji:'🚂', label:'Commute'},
+  {key:'medDev',     emoji:'🔬', label:'Med-Dev Jobs'},
+  {key:'dog',        emoji:'🐾', label:'Dog Services'},
+  {key:'housing',    emoji:'🏠', label:'Housing'},
+  {key:'cost',       emoji:'💶', label:'Cost of Living'},
+  {key:'alps',       emoji:'⛰️', label:'Alps Access'},
+  {key:'lakes',      emoji:'🏞️', label:'Lakes'},
+  {key:'expat',      emoji:'🌍', label:'Expat Friendly'},
+  {key:'rail',       emoji:'🛤️', label:'Rail Network'},
+];
+
+// weights: 0-5 scale
+let W = {commute:5, medDev:5, dog:4, housing:4, cost:4, alps:3, lakes:3, expat:3, rail:3};
+
+let filter = 'all';
+let sortBy  = 'score';
+let favs    = JSON.parse(localStorage.getItem('rd-favs')  || '[]');
+let notes   = JSON.parse(localStorage.getItem('rd-notes') || '{}');
+let activeLoc = null;
+
+const LOCS = [
+  {
+    id:'munich', name:'Munich', nameDe:'München', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany', pop:'1.5 million', commuteMin:0,
+    commuteText:'Office is here!', cost:'€3,200–4,800/mo',
+    sc:{commute:10, medDev:10, dog:7, housing:3, cost:2, alps:5, lakes:7, expat:10, rail:10},
+    highlight:'Zero commute — the ADI office is right here. Munich has the largest concentration of medical device companies in Germany. The trade-off is a seriously tough housing market.',
+    jobs:['Siemens Healthineers','GE HealthCare','Brainlab','Carl Zeiss Meditec','Becton Dickinson','B. Braun','Medi GmbH','BioNTech (nearby)'],
+    jobNotes:'Munich is arguably Germany\'s medical device capital. Siemens Healthineers alone employs thousands. Your partner would have exceptional choice across QA, regulatory affairs, microbiology, and sterility testing roles. English is standard in most international companies.',
+    dogNotes:'Munich is surprisingly dog-friendly. The English Garden (bigger than Central Park) has off-lead zones. Cooperative care vets and specialist groomers are available — search "cooperative care München" or "Fear Free vet München". Boarding options are plentiful city-wide.',
+    housingNotes:'The toughest rental market in Germany. Expect €1,800–2,500/month for a decent 2BR. Garden apartments ("Erdgeschoss mit Garten") exist but are premium and disappear instantly. Try Schwabing, Haidhausen, Pasing, or Neuhausen. Be ready to act fast and have documents prepared.',
+    transportNotes:'Exceptional — S-Bahn, U-Bahn, trams, buses. The Deutschlandticket (€58/month) covers all regional transport. ICE hub to Vienna, Salzburg, and all German cities. Munich Airport (S1 direct) for Dublin/Cork flights.',
+    pros:['Zero commute — walk or cycle to ADI','Best med-device job market in Germany','Hugely international — English everywhere','Rich culture, food, nightlife','Starnberger See 30 min away','Fast flights home to Ireland'],
+    cons:['Most expensive city in Germany','Extremely tight housing market','Alps are 1–1.5 hours south','High-stress urban density','Gardens very hard to find affordably'],
+    lakes:'Starnberger See (30 min), Ammersee (45 min), Tegernsee (50 min)',
+    alpsNote:'Garmisch-Partenkirchen 1.5 hours south; Alps visible on clear days',
+    mapUrl:'https://maps.google.com/?q=Munich,Germany',
+  },
+  {
+    id:'augsburg', name:'Augsburg', nameDe:'Augsburg', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany', pop:'300,000', commuteMin:35,
+    commuteText:'~35 min to Munich', cost:'€1,900–2,800/mo',
+    sc:{commute:9, medDev:7, dog:7, housing:7, cost:7, alps:4, lakes:5, expat:7, rail:8},
+    highlight:'Affordable city life, 35 minutes from ADI by train. Bavaria\'s third-largest city with real character, much lower costs, and a liveable rental market.',
+    jobs:['Krones AG','University Hospital Augsburg (UKA)','MTU Aero Engines','SGL Carbon','Full Munich network 35 min away'],
+    jobNotes:'Augsburg\'s University Hospital Augsburg is a large employer, and proximity to Munich\'s huge market is the main draw. Many people commute Munich→Augsburg for the lower rents. English spoken in most international companies.',
+    dogNotes:'Very dog-friendly. The Lech river parks and Stadtwald (city forest) offer excellent off-lead areas. Good range of vet practices. A 300K-population city supports specialist groomers and cooperative care practitioners.',
+    housingNotes:'Significantly more affordable than Munich. A nice 2BR with garden could be €1,100–1,600/month. Much better stock and less frantic competition. The Innenstadt and Haunstetten areas have a mix of apartments and houses.',
+    transportNotes:'Direct Regional Express and ICE trains to Munich every 15–30 minutes, 30–40 min journey. Excellent frequency. Local trams within the city. Deutschlandticket covers everything.',
+    pros:['35 min direct train to ADI Munich','Much cheaper than Munich','Better housing availability + gardens','UNESCO World Heritage Old Town','Good expat community (university city)','Ammersee lake 40 min away'],
+    cons:['Alps 1.5–2 hours away','No major lake nearby','Smaller expat scene than Munich','Flatter landscape'],
+    lakes:'Ammersee (40 min), Starnberger See (1 hour)',
+    alpsNote:'Allgäu Alps ~1.5 hours, Garmisch ~2 hours',
+    mapUrl:'https://maps.google.com/?q=Augsburg,Germany',
+  },
+  {
+    id:'starnberg', name:'Starnberg', nameDe:'Starnberg', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Lake District', pop:'23,000', commuteMin:28,
+    commuteText:'~28 min to Munich (S6)', cost:'€2,400–3,800/mo',
+    sc:{commute:9, medDev:6, dog:8, housing:5, cost:4, alps:6, lakes:10, expat:8, rail:8},
+    highlight:'Living directly on the stunning Starnberger See with a 28-minute S-Bahn into the ADI office. Premium lifestyle in Bavaria\'s lake district — pricey, but spectacular.',
+    jobs:['Full Munich network via S6 (28 min)','Siemens Healthineers (15 min to Munich)','Carl Zeiss Meditec','Many C-suite professionals commute from here'],
+    jobNotes:'Starnberg is a small town of 23,000 but 28 minutes by S6 S-Bahn gives full access to Munich\'s entire medical device job market. Many senior professionals choose to live here and commute — your partner would be in good company.',
+    dogNotes:'Excellent. The Starnberger See shoreline offers beautiful lakeside walks. Plenty of off-lead areas in the woods above the town. Dog-positive culture. Good local vets. This affluent international community expects high-quality pet services.',
+    housingNotes:'Starnberg approaches Munich prices — it\'s one of Bavaria\'s wealthiest areas. A 2BR apartment with garden might be €1,600–2,500/month. Less stock than Munich but more gardens and houses. Ground-floor apartments do come up. Worth monitoring Immobilienscout24 closely.',
+    transportNotes:'S6 S-Bahn runs direct to Munich Marienplatz/Hauptbahnhof, ~28 minutes, every 20 minutes. Very reliable. Car useful for exploring the lake area and driving south to the Alps.',
+    pros:['Right on the beautiful Starnberger See','28 min S-Bahn to ADI — excellent commute','International affluent community','Alps clearly visible; 1 hour south by car','Very safe, high quality of life','English widely spoken'],
+    cons:['Near Munich prices — expensive','Very small town — limited local services','Medical device employers require commute','Limited housing stock'],
+    lakes:'Starnberger See (immediate!), Ammersee (20 min), Wörthsee (15 min)',
+    alpsNote:'Alps visible from town; Garmisch ~1 hour south',
+    mapUrl:'https://maps.google.com/?q=Starnberg,Bavaria,Germany',
+  },
+  {
+    id:'freising', name:'Freising', nameDe:'Freising', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany', pop:'50,000', commuteMin:38,
+    commuteText:'~38 min to Munich (S1)', cost:'€1,700–2,500/mo',
+    sc:{commute:9, medDev:7, dog:7, housing:7, cost:6, alps:3, lakes:4, expat:7, rail:8},
+    highlight:'Charming historic town 38 minutes from ADI by S-Bahn, and 10 minutes from Munich Airport — brilliant for trips home to Ireland. Better value than Munich with a real community feel.',
+    jobs:['TU Munich Weihenstephan Campus','University Hospital Rechts der Isar (30 min)','Munich biotech cluster (Martinsried, 45 min)','Full Munich network via S1'],
+    jobNotes:'Freising has TU Munich\'s Weihenstephan campus (life sciences) and is close to Munich\'s medical network. The main draw for your partner is the fast S1 connection to the Munich med-device cluster. English widely spoken in companies.',
+    dogNotes:'Dog-friendly university town atmosphere. Good walks along the Isar river and in the city forest (Domberg area). Solid local vet practices. The medium size (50K) supports a range of pet services without the big-city chaos.',
+    housingNotes:'More affordable than Munich. A 2BR with garden could be €1,100–1,600/month. Good availability of ground-floor apartments and small houses. Less competition than Munich or Starnberg. The Lerchenfeld and Pulling suburbs have more garden properties.',
+    transportNotes:'S1 direct to Munich HBF ~38 min, also connects to Munich Airport in ~10 minutes — ideal for Ryanair/Aer Lingus trips home. Very frequent service. Deutschlandticket covers all of it.',
+    pros:['38 min direct S1 to ADI Munich','10 min to Munich Airport — great for home trips!','Affordable vs Munich','Lovely medieval cathedral town','University town atmosphere','Good housing availability'],
+    cons:['Alps 2+ hours south','No nearby major lake','Relatively flat, industrial surroundings','Less scenic than southern Bavaria'],
+    lakes:'Isar river; Starnberger See ~1 hour',
+    alpsNote:'Alps ~2 hours south by car',
+    mapUrl:'https://maps.google.com/?q=Freising,Bavaria,Germany',
+  },
+  {
+    id:'rosenheim', name:'Rosenheim', nameDe:'Rosenheim', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Upper Bavaria', pop:'64,000', commuteMin:50,
+    commuteText:'~50 min to Munich', cost:'€1,600–2,400/mo',
+    sc:{commute:8, medDev:6, dog:9, housing:7, cost:6, alps:8, lakes:7, expat:6, rail:8},
+    highlight:'Gateway to the Alps and Bavaria\'s lake country. Solid 50-minute commute, outdoorsy culture, and genuinely affordable — with the Inn river and Chiemsee on your doorstep.',
+    jobs:['Klinikum Rosenheim (district hospital)','HOERBIGER Group','Proximity: Munich network (50 min)','Kufstein/Innsbruck corridor accessible'],
+    jobNotes:'Rosenheim has a decent regional economy and a good district hospital. The main medical device market is Munich, 50 min away by direct train — very manageable. Kufstein and Innsbruck are also accessible for Austrian opportunities.',
+    dogNotes:'Outstanding. Inn river walks, surrounding countryside, and Alpine culture mean dogs are truly part of life here. The outdoorsy population means great off-lead areas, good boarding kennels, and a culture that welcomes dogs everywhere.',
+    housingNotes:'More affordable than northern Bavaria. Houses with gardens are achievable. A nice 3BR with enclosed garden might be €1,100–1,700/month. Better availability than Munich and significantly less competition. Perfect for your housing requirements.',
+    transportNotes:'Direct trains to Munich every 30 minutes (~50 min). On the main Munich–Salzburg rail corridor. Car very useful for Alps and lake exploration. Excellent Deutschlandticket coverage.',
+    pros:['50 min direct train to ADI Munich','Right at the foot of the Alps (Kaiser mountains visible)','Chiemsee 25 min away (Bavaria\'s biggest lake)','Outdoorsy culture — perfect for active dog life','Affordable housing with gardens','Strong local community'],
+    cons:['Smaller international community','Less English spoken than Munich','Conservative, traditional culture','Limited local med-device employers'],
+    lakes:'Chiemsee (25 min), Simssee (15 min), Tegernsee (40 min)',
+    alpsNote:'Alps at the doorstep — Wilder Kaiser mountains visible; Kufstein 30 min',
+    mapUrl:'https://maps.google.com/?q=Rosenheim,Bavaria,Germany',
+  },
+  {
+    id:'prien', name:'Prien am Chiemsee', nameDe:'Prien am Chiemsee', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Chiemsee', pop:'11,000', commuteMin:60,
+    commuteText:'~60 min to Munich', cost:'€1,400–2,100/mo',
+    sc:{commute:8, medDev:5, dog:9, housing:8, cost:7, alps:7, lakes:10, expat:6, rail:7},
+    highlight:'Directly on Bavaria\'s biggest lake with Alpine views. Small-town paradise for dogs and outdoor life. The 60-minute train commute is very liveable for 3 days a week.',
+    jobs:['Rosenheim regional hospital (20 min)','Klinikum Wasserburg','Munich full network (60 min)','Traunstein regional'],
+    jobNotes:'Prien is small (11K), so your partner would commute to Munich (1 hour) or Rosenheim for medical device roles. Very manageable for 3 days/week. Remote/hybrid options would be transformative here.',
+    dogNotes:'Outstanding for dogs. The Chiemsee shoreline is enormous and gorgeous for off-lead swimming and running. Very dog-friendly community — outdoor culture through and through. Local vets, regional boarding kennels. An excellent environment for a dog needing calm, natural surroundings.',
+    housingNotes:'Genuinely achievable for your requirements. Houses with enclosed gardens are available and affordable. A 3BR with garden might be €1,000–1,500/month. Prien\'s small size means manageable competition — you\'d have real choices here.',
+    transportNotes:'On the Munich–Salzburg mainline with direct trains ~60 min. Good frequency. Car very useful for daily life and exploring. The Chiemsee is also served by a lovely historic ferry to the islands.',
+    pros:['Right on Chiemsee — Bavaria\'s biggest lake','Incredible outdoor lifestyle for dogs','Alps visible across the lake','Affordable housing with enclosed gardens — realistic!','Peaceful small-town life','Strong community feel'],
+    cons:['Very small town (11K) — limited services','Medical device jobs require Munich commute','Very limited international/expat community','Little English spoken','Car essential for daily life'],
+    lakes:'Chiemsee (immediate!), Simssee (15 min), Waginger See (30 min)',
+    alpsNote:'Alps clearly visible across the lake; Berchtesgaden 45 min',
+    mapUrl:'https://maps.google.com/?q=Prien+am+Chiemsee,Germany',
+  },
+  {
+    id:'weilheim', name:'Weilheim i. OB', nameDe:'Weilheim in Oberbayern', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Pfaffenwinkel', pop:'24,000', commuteMin:60,
+    commuteText:'~60 min to Munich', cost:'€1,300–1,900/mo',
+    sc:{commute:7, medDev:5, dog:9, housing:9, cost:7, alps:7, lakes:9, expat:5, rail:7},
+    highlight:'Sweet spot between three stunning lakes and the Alps. Affordable, genuinely Bavarian, and excellent for the enclosed garden you need. Hidden gem of the region.',
+    jobs:['Schongau hospital (local)','Weilheim district services','Munich network via train (~60 min)','Augsburg accessible (1.5 hours)'],
+    jobNotes:'Small local economy; your partner would realistically commute to Munich for medical device roles. The train connection makes this manageable. Remote/hybrid working would make Weilheim an even stronger choice.',
+    dogNotes:'Exceptional. The Pfaffenwinkel region — rolling hills, meadows, lakes, and easy Alpine access — is a natural paradise for dogs. Very relaxed, outdoor community. Good local vets. Off-lead areas abundant. Calm environment: ideal for a dog with behavioural sensitivities.',
+    housingNotes:'One of the best options for your specific requirements. Genuinely affordable houses with enclosed gardens are realistic here. A 3BR house with good garden could be €900–1,400/month. Low competition. This is where the enclosed outdoor space you need actually becomes achievable.',
+    transportNotes:'BOB train line toward Munich (changes at Weilheim junction) ~60 min total. Car strongly recommended for daily life and exploring the lakes. Central position between Ammersee, Starnberger See, and Staffelsee.',
+    pros:['Between three great lakes (Ammersee, Starnberger See, Staffelsee)','Alps close — Garmisch 40 min','Best realistic option for enclosed garden/house','Very affordable housing','Perfect calm environment for dog with sensitivities','Authentic Bavarian village life'],
+    cons:['Train requires change — a bit less convenient','Very limited expat community','Little English spoken locally','Car essential','Small town — limited local services','Conservative culture'],
+    lakes:'Ammersee (20 min), Starnberger See (25 min), Staffelsee (25 min), Kochelsee (30 min)',
+    alpsNote:'Alps close — Garmisch 40 min, Zugspitze visible on clear days',
+    mapUrl:'https://maps.google.com/?q=Weilheim+in+Oberbayern,Germany',
+  },
+  {
+    id:'badtoelz', name:'Bad Tölz', nameDe:'Bad Tölz', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Alpine Foothills', pop:'19,000', commuteMin:72,
+    commuteText:'~72 min to Munich', cost:'€1,500–2,200/mo',
+    sc:{commute:7, medDev:5, dog:10, housing:7, cost:7, alps:9, lakes:8, expat:5, rail:6},
+    highlight:'Stunning spa town right at the Alpine foothills. 20 minutes from the gorgeous Tegernsee. The Isar river runs through town — an incredible dog walking environment.',
+    jobs:['Schön Klinik (private hospital group HQ — right here!)','Klinikum Bad Tölz-Wolfratshausen','Munich network via BOB train (~72 min)'],
+    jobNotes:'Notably, Schön Klinik — a major private German hospital group — has connections to Bad Tölz and may have QA/regulatory roles worth checking. Otherwise, Munich is the target via BOB train. 72 minutes 3x/week is manageable.',
+    dogNotes:'Truly outstanding. The Isar river flows right through town with beautiful riverside walks. Surrounding Alpine forests and meadows mean unlimited off-lead exploration. The spa-town culture is relaxed and unhurried — excellent for a sensitive dog. Specialist services available regionally.',
+    housingNotes:'More affordable than northern Bavaria. A mix of apartments and houses available. 3BR with garden possible around €1,100–1,700/month. The spa-town character means a rental market exists. Better options for enclosed outdoor space than Munich suburbs.',
+    transportNotes:'BOB (Bayerische Oberlandbahn) to Munich Ostbahnhof ~72 min. Frequency is reasonable but less than S-Bahn. Car is recommended. Tegernsee is a quick drive. The journey to Munich is scenic through the foothills.',
+    pros:['Isar river — perfect off-lead dog walks','Right at Alpine foothills — Brauneck ski area above town','Tegernsee 20 minutes away (beautiful!)','Spa town atmosphere — relaxed, unhurried','More affordable housing with garden options','Schön Klinik connection for job opportunities'],
+    cons:['72 min commute — noticeable 3x/week','Very limited expat community','Little English outside tourism','Small and conservative','Car recommended'],
+    lakes:'Tegernsee (20 min), Schliersee (30 min), Sylvensteinsee (30 min)',
+    alpsNote:'Alps immediate — Brauneck ski area directly above town; Zugspitze 1 hour',
+    mapUrl:'https://maps.google.com/?q=Bad+T%C3%B6lz,Germany',
+  },
+  {
+    id:'garmisch', name:'Garmisch-Partenkirchen', nameDe:'Garmisch-Partenkirchen', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Zugspitze', pop:'26,000', commuteMin:88,
+    commuteText:'~88 min to Munich', cost:'€1,700–2,600/mo',
+    sc:{commute:6, medDev:3, dog:10, housing:6, cost:5, alps:10, lakes:8, expat:7, rail:7},
+    highlight:'Germany\'s most famous mountain resort — the Zugspitze on your doorstep. International ski town. The commute is a stretch but for the Alps access it might just be worth it.',
+    jobs:['Limited local — mainly tourism/hospitality','Munich 90 min away — viable for 3 days/week','Innsbruck accessible too (30 min by train)'],
+    jobNotes:'Very limited locally for medical devices. Munich commute of ~88 min each way is around 3 hours return — at your stated maximum. Feasible for 3 days/week but tiring. This works best if your partner can work remotely or hybrid.',
+    dogNotes:'Simply outstanding. This is a mountain paradise for dogs. Alpine meadows, forest trails, clear streams, and the Eibsee — all off-lead friendly. International resort means people here are very relaxed and dog-positive. Specialist services available for an international community.',
+    housingNotes:'Tourist area creates some premium pricing but permanent resident market is separate. Ground-floor apartments and houses are achievable — mountain towns have more horizontal space. 2–3BR with garden might be €1,300–2,000/month. Some competition from holiday-home buyers.',
+    transportNotes:'Direct BEG trains to Munich HBF ~88 min, roughly hourly. Reliable service. Car useful for winter and mountain access. Innsbruck only 30 min by train. International connections good for a ski resort town.',
+    pros:['Zugspitze immediately — Germany\'s highest peak','International resort town — English everywhere','Incredible outdoor life year-round for dogs','Eibsee — one of Bavaria\'s most beautiful lakes (10 min)','Houses with gardens more achievable','Innsbruck 30 min — adds another job market'],
+    cons:['88 min commute — at the limit for 3x/week','Very limited local medical device employers','Some tourist premium on housing','Isolated mountain valley','Cold winters'],
+    lakes:'Eibsee (10 min — stunning!), Riessersee (5 min), Staffelsee (20 min), Walchensee (25 min)',
+    alpsNote:'Zugspitze immediately — Germany\'s highest mountain. Ski lifts from town.',
+    mapUrl:'https://maps.google.com/?q=Garmisch-Partenkirchen,Germany',
+  },
+  {
+    id:'murnau', name:'Murnau am Staffelsee', nameDe:'Murnau am Staffelsee', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Alpine Foothills', pop:'12,000', commuteMin:80,
+    commuteText:'~80 min to Munich', cost:'€1,200–1,900/mo',
+    sc:{commute:6, medDev:4, dog:9, housing:9, cost:8, alps:9, lakes:10, expat:5, rail:6},
+    highlight:'On the beautiful Staffelsee with the Alps as a backdrop. Famously artistic and peaceful. Excellent housing options with gardens. A hidden gem that punches above its weight.',
+    jobs:['Limited local','Munich via BOB train ~80 min','Weilheim district hospital (15 min)'],
+    jobNotes:'Murnau is a small artistic town — employment means commuting to Munich. For 3 days/week this is the stretch. Hybrid/remote work transforms this place into an exceptional choice. Well worth considering if flexible working is possible.',
+    dogNotes:'Exceptional. The Staffelsee shoreline, Alpine meadows, and the quiet rural paths make this an ideal environment for a dog needing calm, natural, uncrowded surroundings. Very low-stress for dogs with sensitivities. Specialist services a short drive to Weilheim or Garmisch.',
+    housingNotes:'This is where your housing dreams become most achievable. Genuinely affordable — a 3BR house with large enclosed garden might be €900–1,300/month. Low competition. Good stock of houses and ground-floor apartments. This is the strongest option for your enclosed outdoor space requirement.',
+    transportNotes:'BOB line toward Munich ~80 min (with change). Car strongly recommended. The drive to Munich along the lakes and through the foothills is scenic. Garmisch-Partenkirchen is 20 min by car.',
+    pros:['On the Staffelsee — stunning lake with Alps views','Best housing option: houses with enclosed gardens at fair prices','Peaceful, very low-stress (great for sensitive dog)','Alps immediately south — hiking from the doorstep','Artistic heritage (Kandinsky, Münter lived here)','Multiple lakes within 30 min'],
+    cons:['80 min commute — noticeable','Very small (12K) — car needed for most things','Almost no English or expat community','Very traditional community'],
+    lakes:'Staffelsee (immediate!), Riegsee (5 min), Walchensee (20 min), Ammersee (30 min)',
+    alpsNote:'Alps immediately south — Zugspitze massif visible across the Staffelsee on clear days',
+    mapUrl:'https://maps.google.com/?q=Murnau+am+Staffelsee,Germany',
+  },
+  {
+    id:'kufstein', name:'Kufstein', nameDe:'Kufstein', country:'AT', flag:'🇦🇹',
+    region:'Tyrol, Austria — Inn Valley', pop:'20,000', commuteMin:58,
+    commuteText:'~58 min to Munich (Railjet)', cost:'€1,400–2,100/mo',
+    sc:{commute:8, medDev:5, dog:9, housing:8, cost:7, alps:9, lakes:7, expat:6, rail:8},
+    highlight:'Dramatic fortress town in the Austrian Tyrol, 58 minutes from ADI by direct Railjet. Right in the Alps, great rail link, and positioned between Munich and Innsbruck job markets.',
+    jobs:['Innsbruck University Hospital (40 min)','Rosenheim regional (30 min across border)','Munich full network (58 min)','Austrian pharmaceutical sector (Innsbruck)'],
+    jobNotes:'Kufstein\'s unique advantage: it sits between Munich (58 min) and Innsbruck (40 min). Your partner could target both cities\' medical device markets. Innsbruck has a growing biotech scene anchored by its Medical University. EU citizens face no extra bureaucracy moving to Austria.',
+    dogNotes:'Excellent. The Wilder Kaiser mountains rise directly above the town. Inn river promenade for walks. Very outdoorsy Austrian culture where dogs are a natural part of life. Good local vets in Kufstein. Specialist services in Rosenheim (30 min) or Innsbruck (40 min).',
+    housingNotes:'Austrian rental prices are generally lower than equivalent Bavarian towns. Good availability of houses with gardens. A 3BR house with enclosed garden might be €1,000–1,500/month. Austrian tenancy law is also notably more tenant-friendly than German law.',
+    transportNotes:'On the main Munich–Innsbruck–Vienna rail line. Railjet trains to Munich ~58 min, hourly. Excellent frequency. ÖBB network is world-class. Car useful for exploring the mountains.',
+    pros:['58 min direct Railjet to ADI Munich','Dramatic fortress town — Wilder Kaiser mountains above','Right in the Austrian Alps','Austrian prices lower than Bavaria','Access to both Munich AND Innsbruck job markets','Excellent rail connections','Houses with gardens available','More tenant-friendly rental law'],
+    cons:['Cross-border admin (very minor for EU citizens)','Small town (20K) — limited local services','Little English outside tourism','Medical device jobs require commute'],
+    lakes:'Hechtsee (10 min), Thiersee (15 min), Walchsee (20 min), Chiemsee (30 min)',
+    alpsNote:'Wilder Kaiser immediately above town — dramatic limestone peaks. Innsbruck Alps 40 min.',
+    mapUrl:'https://maps.google.com/?q=Kufstein,Austria',
+  },
+  {
+    id:'salzburg', name:'Salzburg', nameDe:'Salzburg', country:'AT', flag:'🇦🇹',
+    region:'Salzburg, Austria', pop:'155,000', commuteMin:95,
+    commuteText:'~95 min to Munich', cost:'€1,700–2,800/mo',
+    sc:{commute:6, medDev:7, dog:8, housing:6, cost:6, alps:9, lakes:9, expat:9, rail:8},
+    highlight:'One of Europe\'s most beautiful cities, surrounded by Alpine lakes and mountains. Growing life sciences scene, highly international — and Munich is reachable in 95 minutes direct.',
+    jobs:['Paracelsus Medical University','Salzburg University Hospital (SALK)','Anton Paar (precision instruments)','Red Bull GmbH nearby','Growing Salzburg tech/life science cluster'],
+    jobNotes:'Salzburg has a genuine life sciences cluster anchored by Paracelsus Medical University and SALK. Your partner could find QA, sterility testing, and regulatory affairs roles locally without needing Munich. Munich remains accessible for top-tier positions.',
+    dogNotes:'Dog-friendly city with the Salzach river promenade, Untersberg mountain at the edge of town, and the vast Salzkammergut lake district on the doorstep. Specialist vets and groomers available in a city of 155K. Austrian culture is very dog-positive.',
+    housingNotes:'Salzburg is popular and housing is competitive but more manageable than Munich. Austrian rents are generally lower. A 2–3BR apartment with garden might be €1,300–2,000/month. The outer districts (Gneis, Maxglan, Taxham) offer better value with more garden options.',
+    transportNotes:'Direct RailJet/IC trains to Munich every 30–60 min, ~95 min journey. Very reliable. Salzburg has its own bus and trolleybus network. ÖBB is excellent. Salzburg Airport also has direct Dublin flights (Ryanair seasonal) — useful!',
+    pros:['One of the world\'s most beautiful cities','Growing local med-device/life sciences scene','Highly international — English widely spoken','Surrounded by Salzkammergut lakes and Alps','Rich culture — Mozart, festivals, architecture','Direct Munich trains every hour','Salzburg Airport: some direct Dublin flights'],
+    cons:['95 min commute — longer but 3x/week is fine','Housing is competitive','More expensive than smaller Austrian towns','Cross-border logistics (seamless for EU)'],
+    lakes:'Wolfgangsee (30 min), Mondsee (25 min), Fuschlsee (20 min), Königssee (30 min, DE)',
+    alpsNote:'Untersberg right at city edge (cable car); Berchtesgaden 30 min; Alps everywhere',
+    mapUrl:'https://maps.google.com/?q=Salzburg,Austria',
+  },
+  {
+    id:'innsbruck', name:'Innsbruck', nameDe:'Innsbruck', country:'AT', flag:'🇦🇹',
+    region:'Tyrol, Austria', pop:'132,000', commuteMin:110,
+    commuteText:'~110 min to Munich', cost:'€1,600–2,600/mo',
+    sc:{commute:5, medDev:7, dog:9, housing:6, cost:6, alps:10, lakes:7, expat:8, rail:8},
+    highlight:'The ultimate Alpine city — surrounded by 2,000m peaks on all sides. World-class university with a Medical University. Ski-in ski-out lifestyle. The commute is the longest but the setting is extraordinary.',
+    jobs:['Medical University of Innsbruck (prestigious MUI)','Innsbruck University Hospital (TILAK)','Blum (manufacturing/engineering)','Growing Tyrol biotech startup scene','Sandoz (Novartis generics) — Kundl, 30 min away'],
+    jobNotes:'The Medical University of Innsbruck is a major employer and reputation hub for QA/regulatory/microbiology in medical devices and pharma. Sandoz (Novartis generics division) in Kundl, 30 min away, is one of Europe\'s largest pharmaceutical sites. Strong local market without needing Munich.',
+    dogNotes:'Exceptional. Mountain trails from the city edge, the Inn river promenade, the Nordkette cable car area (dog-friendly). Very dog-positive Austrian culture. University city means progressive, international attitudes. Good specialist vet services.',
+    housingNotes:'University city — housing is in demand and getting more expensive. A 2BR with terrace/garden might be €1,200–1,900/month. Outer districts (Igls, Aldrans, Rum, Völs) offer better value and more garden options. Houses available outside the city centre.',
+    transportNotes:'Direct RailJet to Munich ~110 min, every 2 hours. ÖBB is excellent. Innsbruck has modern trams and buses. Garmisch-Partenkirchen is only 30 min by train — adds another job market and incredible hiking.',
+    pros:['Surrounded by the Alps on all sides — truly stunning','Medical University for partner\'s career (no Munich commute needed!)','Sandoz/pharma sector 30 min away','International university city — English common','Skiing literally from the city edge','Exceptional quality of life','Garmisch 30 min away'],
+    cons:['110 min each way — 3h40min round trip is the longest','Tiring for 3x/week — real consideration','University city housing pressure','Cross-border admin (minor for EU)'],
+    lakes:'Achensee (45 min), Bergiseel (local), Walchsee (40 min)',
+    alpsNote:'Alps literally surround the city — Nordkette cable car rises from the city centre to 2,300m',
+    mapUrl:'https://maps.google.com/?q=Innsbruck,Austria',
+  },
+  {
+    id:'landsberg', name:'Landsberg am Lech', nameDe:'Landsberg am Lech', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Lechrain', pop:'31,000', commuteMin:72,
+    commuteText:'~72 min to Munich', cost:'€1,300–2,000/mo',
+    sc:{commute:7, medDev:5, dog:8, housing:8, cost:8, alps:5, lakes:7, expat:5, rail:6},
+    highlight:'Beautiful medieval walled town on the Lech river. Affordable, charming, and positioned between Munich and Augsburg. The Ammersee is 30 minutes away.',
+    jobs:['Klinikum Landsberg','AGCO (agri-machinery) — local','Augsburg medical cluster (30 min)','Munich network (72 min)'],
+    jobNotes:'Small local market but well-positioned between Augsburg (30 min) and Munich (72 min). Your partner could target both cities. Augsburg\'s University Hospital is a viable option for medical/QA roles.',
+    dogNotes:'Very dog-friendly. The Lech river and surrounding Lechrain landscape — meadows, forests, river beaches — are excellent for off-lead walking. The community is relaxed and outdoor-oriented. Good local vets.',
+    housingNotes:'Affordable and good availability. One of the better options for your enclosed garden requirement. A 3BR house with garden might be €900–1,400/month. Low competition. The historic old town is beautiful and practical for everyday life.',
+    transportNotes:'Train connection to Munich requires a change — total ~72 min. Bus connections to Augsburg. Direct Augsburg–Landsberg routes exist. Car is useful. Not the strongest rail link but manageable for 3 days/week.',
+    pros:['Beautiful medieval old town (UNESCO listed walls)','Lech river — excellent natural dog walking','Affordable housing with gardens — realistic','Between Ammersee and Allgäu foothills','Close to Augsburg (30 min) — additional job market','Relaxed, unhurried pace of life'],
+    cons:['Train connection not direct — requires change','Limited expat community','Not as Alpine as southern locations','Little English locally'],
+    lakes:'Ammersee (30 min), Wesslinger See (25 min), Starnberger See (50 min)',
+    alpsNote:'Allgäu Alps visible on clear days; Füssen/Neuschwanstein 1 hour',
+    mapUrl:'https://maps.google.com/?q=Landsberg+am+Lech,Germany',
+  },
+];
+
+/* ══════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════ */
+function scoreColor(s) {
+  return s >= 7 ? 'var(--good)' : s >= 5 ? 'var(--ok)' : 'var(--poor)';
+}
+function scoreClass(s) {
+  return s >= 7 ? 'c-good' : s >= 5 ? 'c-ok' : 'c-poor';
+}
+function weighted(loc) {
+  let t = 0, m = 0;
+  CRITERIA.forEach(c => {
+    const w = W[c.key] || 0;
+    t += loc.sc[c.key] * w;
+    m += 10 * w;
+  });
+  return m > 0 ? Math.round(t / m * 100) : 0;
+}
+function ring(score100, size, strokeW) {
+  const r = (size - strokeW) / 2;
+  const circ = 2 * Math.PI * r;
+  const off = circ - (score100 / 100) * circ;
+  const cx = size / 2, cy = size / 2;
+  const col = scoreColor(score100 / 10);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="transform:rotate(-90deg)">
+    <circle fill="none" stroke="rgba(255,255,255,.08)" stroke-width="${strokeW}" cx="${cx}" cy="${cy}" r="${r}"/>
+    <circle fill="none" stroke="${col}" stroke-width="${strokeW}" stroke-linecap="round"
+      stroke-dasharray="${circ}" stroke-dashoffset="${off}" cx="${cx}" cy="${cy}" r="${r}"/>
+  </svg>`;
+}
+
+/* ══════════════════════════════════════════
+   WEIGHTS PANEL
+══════════════════════════════════════════ */
+function buildWeightsPanel() {
+  const panel = document.getElementById('wt-panel');
+  panel.innerHTML = CRITERIA.map(c => `
+    <div class="weight-row">
+      <span class="weight-emoji">${c.emoji}</span>
+      <span class="weight-lbl">${c.label}</span>
+      <input type="range" class="weight-slider" min="0" max="5" value="${W[c.key]}"
+        data-key="${c.key}" id="ws-${c.key}">
+      <span class="weight-val" id="wv-${c.key}">${W[c.key]}</span>
+    </div>
+  `).join('') + `<button class="reset-btn" id="reset-w">↺ Reset weights</button>`;
+
+  panel.querySelectorAll('.weight-slider').forEach(sl => {
+    sl.addEventListener('input', e => {
+      const key = e.target.dataset.key;
+      W[key] = +e.target.value;
+      document.getElementById('wv-' + key).textContent = e.target.value;
+      renderCards();
+      if (activeLoc) refreshModalScore();
+    });
+  });
+  document.getElementById('reset-w').addEventListener('click', () => {
+    CRITERIA.forEach(c => {
+      W[c.key] = 3;
+      document.getElementById('ws-' + c.key).value = 3;
+      document.getElementById('wv-' + c.key).textContent = 3;
+    });
+    renderCards();
+    if (activeLoc) refreshModalScore();
+  });
+}
+
+document.getElementById('wt-btn').addEventListener('click', () => {
+  const panel = document.getElementById('wt-panel');
+  const arrow = document.getElementById('wt-arrow');
+  const open = panel.classList.toggle('open');
+  arrow.textContent = open ? '▲' : '▼';
+});
+
+/* ══════════════════════════════════════════
+   FILTER / SORT
+══════════════════════════════════════════ */
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    filter = p.dataset.filter;
+    renderCards();
+  });
+});
+document.getElementById('sort-sel').addEventListener('change', e => {
+  sortBy = e.target.value;
+  renderCards();
+});
+
+function getList() {
+  let list = LOCS.map(l => ({...l, _s: weighted(l)}));
+  if (filter === 'DE')  list = list.filter(l => l.country === 'DE');
+  if (filter === 'AT')  list = list.filter(l => l.country === 'AT');
+  if (filter === 'fav') list = list.filter(l => favs.includes(l.id));
+  list.sort((a, b) => {
+    if (sortBy === 'commute') return a.commuteMin - b.commuteMin;
+    if (sortBy === 'cost')    return b.sc.cost - a.sc.cost;
+    if (sortBy === 'alps')    return b.sc.alps - a.sc.alps;
+    if (sortBy === 'lakes')   return b.sc.lakes - a.sc.lakes;
+    if (sortBy === 'name')    return a.name.localeCompare(b.name);
+    return b._s - a._s;
+  });
+  return list;
+}
+
+/* ══════════════════════════════════════════
+   RENDER CARDS
+══════════════════════════════════════════ */
+function renderCards() {
+  const list = getList();
+  document.getElementById('rn').textContent =
+    `${list.length} location${list.length !== 1 ? 's' : ''} — tap a card to explore details`;
+  document.getElementById('grid').innerHTML = list.map(renderCard).join('');
+
+  // attach events
+  document.querySelectorAll('.card').forEach(card => {
+    const id = card.dataset.id;
+    card.addEventListener('click', e => {
+      if (e.target.closest('.btn-fav')) return;
+      openModal(id);
+    });
+  });
+  document.querySelectorAll('.btn-fav').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleFav(btn.dataset.id);
+    });
+  });
+  document.querySelectorAll('.btn-detail').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openModal(btn.dataset.id);
+    });
+  });
+}
+
+function renderCard(loc) {
+  const s = loc._s;
+  const isFav = favs.includes(loc.id);
+  const col = scoreColor(s / 10);
+  const pros2 = loc.pros.slice(0, 2);
+  const con1 = loc.cons.slice(0, 1);
+
+  return `
+  <div class="card${isFav ? ' fav' : ''}" data-id="${loc.id}">
+    <div class="card-top">
+      <div class="card-meta">
+        <div class="card-name-row">
+          <span class="card-flag">${loc.flag}</span>
+          <span class="card-name">${loc.name}</span>
+        </div>
+        <div class="card-region">${loc.region}</div>
+      </div>
+      <div class="ring-wrap">
+        ${ring(s, 52, 4.5)}
+        <div class="ring-num ${scoreClass(s/10)}">${s}</div>
+      </div>
+    </div>
+
+    <div class="commute-pill">🚂 ${loc.commuteText}</div>
+
+    <div class="bars">
+      ${CRITERIA.map(c => `
+        <div class="bar-row">
+          <div class="bar-lbl">${c.emoji} ${c.label.split(' ')[0]}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${loc.sc[c.key]*10}%;background:${scoreColor(loc.sc[c.key])}"></div></div>
+          <div class="bar-num">${loc.sc[c.key]}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="card-tags">
+      ${pros2.map(p => `<span class="tag tag-pro">${p.length > 32 ? p.slice(0,31)+'…' : p}</span>`).join('')}
+      ${con1.map(c => `<span class="tag tag-con">${c.length > 32 ? c.slice(0,31)+'…' : c}</span>`).join('')}
+    </div>
+
+    <div class="card-actions">
+      <button class="btn-detail" data-id="${loc.id}">See Details</button>
+      <button class="btn-fav${isFav ? ' on' : ''}" data-id="${loc.id}" title="Favourite">${isFav ? '⭐' : '☆'}</button>
+    </div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════
+   FAVOURITES
+══════════════════════════════════════════ */
+function toggleFav(id) {
+  favs = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id];
+  localStorage.setItem('rd-favs', JSON.stringify(favs));
+  renderCards();
+}
+
+/* ══════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════ */
+let activeTab = 'overview';
+
+function openModal(id) {
+  activeLoc = LOCS.find(l => l.id === id);
+  if (!activeLoc) return;
+  const loc = activeLoc;
+
+  document.getElementById('m-title').textContent = `${loc.flag} ${loc.name}`;
+  document.getElementById('m-sub').textContent = `${loc.region} · Pop. ${loc.pop}`;
+  renderModalBody(loc);
+  setTab('overview');
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('sheet-scroll').scrollTop = 0;
+}
+
+function closeModal() {
+  saveNotes();
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  activeLoc = null;
+}
+
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('overlay')) closeModal();
+});
+document.getElementById('btn-close').addEventListener('click', closeModal);
+
+document.getElementById('m-tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.mtab');
+  if (btn) setTab(btn.dataset.tab, btn);
+});
+
+function setTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.mtab').forEach(t => t.classList.remove('active'));
+  const target = btn || document.querySelector(`.mtab[data-tab="${tab}"]`);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  const pane = document.getElementById('pane-' + tab);
+  if (pane) pane.classList.add('active');
+}
+
+function refreshModalScore() {
+  if (!activeLoc) return;
+  const s = weighted(activeLoc);
+  const el = document.getElementById('modal-score-num');
+  if (el) {
+    el.textContent = `${s}/100`;
+    el.className = 'score-num-lg ' + scoreClass(s / 10);
+  }
+  const ringEl = document.getElementById('modal-score-ring');
+  if (ringEl) ringEl.innerHTML = ring(s, 80, 6);
+}
+
+function renderModalBody(loc) {
+  const s = weighted(loc);
+  const col = scoreColor(s / 10);
+  const savedNotes = notes[loc.id] || '';
+
+  document.getElementById('m-body').innerHTML = `
+
+  <!-- OVERVIEW -->
+  <div class="pane active" id="pane-overview">
+    <div class="score-row">
+      <div class="score-ring-lg" id="modal-score-ring">
+        ${ring(s, 80, 6)}
+        <div class="score-num-lg ${scoreClass(s/10)}" id="modal-score-num">${s}/100</div>
+      </div>
+      <div class="score-meta">
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:.2rem">MATCH SCORE</div>
+        <div style="font-size:.85rem;color:var(--muted)">🚂 ${loc.commuteText}</div>
+        <div style="font-size:.85rem;color:var(--muted);margin-top:.2rem">💶 ${loc.cost}</div>
+      </div>
+    </div>
+
+    <div class="callout">${loc.highlight}</div>
+
+    <div class="stitle">All Criteria</div>
+    <div class="full-bars">
+      ${CRITERIA.map(c => `
+        <div class="fbar-row">
+          <div class="fbar-lbl">${c.emoji} ${c.label}</div>
+          <div class="fbar-track"><div class="fbar-fill" style="width:${loc.sc[c.key]*10}%;background:${scoreColor(loc.sc[c.key])}"></div></div>
+          <div class="fbar-num ${scoreClass(loc.sc[c.key])}">${loc.sc[c.key]}/10</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="stitle">Pros &amp; Cons</div>
+    <div class="pros-cons">
+      <div class="pc-box pros">
+        <h4 class="g">✓ Pros</h4>
+        <ul>${loc.pros.map(p => `<li>${p}</li>`).join('')}</ul>
+      </div>
+      <div class="pc-box cons">
+        <h4 class="r">✗ Cons</h4>
+        <ul>${loc.cons.map(c => `<li>${c}</li>`).join('')}</ul>
+      </div>
+    </div>
+
+    <div class="stitle">Nature &amp; Surroundings</div>
+    <div class="tip">
+      <div class="tip-lbl">🏞️ NEARBY LAKES</div>
+      <p>${loc.lakes}</p>
+    </div>
+    <div class="tip" style="margin-top:.5rem">
+      <div class="tip-lbl">⛰️ ALPS ACCESS</div>
+      <p>${loc.alpsNote}</p>
+    </div>
+
+    <a href="${loc.mapUrl}" target="_blank" class="map-link">📍 Open in Google Maps</a>
+  </div>
+
+  <!-- JOBS -->
+  <div class="pane" id="pane-jobs">
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-val ${scoreClass(loc.sc.medDev)}">${loc.sc.medDev}/10</div>
+        <div class="info-lbl">Med-Dev Job Score</div>
+      </div>
+      <div class="info-card">
+        <div class="info-val" style="color:var(--primary)">${loc.commuteText}</div>
+        <div class="info-lbl">Commute to ADI</div>
+      </div>
+    </div>
+
+    <div class="stitle">Companies &amp; Employers Nearby</div>
+    <div class="companies">
+      ${loc.jobs.map(j => `<span class="co-tag">${j}</span>`).join('')}
+    </div>
+
+    <div class="stitle">Job Market Assessment</div>
+    <p style="font-size:.83rem;line-height:1.65;color:#cbd5e1">${loc.jobNotes}</p>
+
+    <div class="tip" style="margin-top:1rem">
+      <div class="tip-lbl">💡 JOB SEARCH TIPS FOR YOUR PARTNER</div>
+      <p>Search LinkedIn for "medical devices QA Biologist", "Mikrobiologe Medizinprodukte", "sterility testing", "ISO 13485 QA" in ${loc.name}. DACH region med-device companies are always looking for microbiology/QA expertise. Xing.de is widely used in Germany/Austria. Check the BVMed member company list for target employers.</p>
+    </div>
+  </div>
+
+  <!-- DOG -->
+  <div class="pane" id="pane-dog">
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-val ${scoreClass(loc.sc.dog)}">${loc.sc.dog}/10</div>
+        <div class="info-lbl">Dog Services Score</div>
+      </div>
+      <div class="info-card">
+        <div class="info-val" style="font-size:.85rem;color:var(--accent)">🐾 🏞️ ⛰️</div>
+        <div class="info-lbl">Nature Access</div>
+      </div>
+    </div>
+
+    <div class="stitle">Dog Life Assessment</div>
+    <p style="font-size:.83rem;line-height:1.65;color:#cbd5e1">${loc.dogNotes}</p>
+
+    <div class="stitle">Natural Environment</div>
+    <div class="tip">
+      <div class="tip-lbl">🏞️ LAKES NEARBY (great for dogs!)</div>
+      <p>${loc.lakes}</p>
+    </div>
+    <div class="tip" style="margin-top:.5rem">
+      <div class="tip-lbl">⛰️ ALPINE TRAILS</div>
+      <p>${loc.alpsNote}</p>
+    </div>
+
+    <div class="tip" style="margin-top:1rem">
+      <div class="tip-lbl">🔍 HOW TO FIND COOPERATIVE CARE SERVICES</div>
+      <p>Search: "Cooperative Care Hund ${loc.nameDe}", "Fear Free Tierarzt ${loc.nameDe}", "angstfreies Grooming ${loc.nameDe}". The Fear Free Pets movement is growing in the DACH region. Join Facebook groups: "Cooperative Care Deutschland" and "Fear Free Tierarzt Deutschland". For boarding: "Tierhotel angstfrei" or "verhaltenssensibler Hund Pension". The German Instagram community #cooperativecare is also very active.</p>
+    </div>
+  </div>
+
+  <!-- HOUSING -->
+  <div class="pane" id="pane-housing">
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-val" style="font-size:.92rem">${loc.cost}</div>
+        <div class="info-lbl">Monthly Cost Estimate</div>
+      </div>
+      <div class="info-card">
+        <div class="info-val ${scoreClass(loc.sc.housing)}">${loc.sc.housing}/10</div>
+        <div class="info-lbl">Housing Score</div>
+      </div>
+      <div class="info-card">
+        <div class="info-val ${scoreClass(loc.sc.cost)}">${loc.sc.cost}/10</div>
+        <div class="info-lbl">Cost of Living</div>
+      </div>
+      <div class="info-card">
+        <div class="info-val">${loc.pop}</div>
+        <div class="info-lbl">Population</div>
+      </div>
+    </div>
+
+    <div class="stitle">Housing Market</div>
+    <p style="font-size:.83rem;line-height:1.65;color:#cbd5e1">${loc.housingNotes}</p>
+
+    <div class="tip" style="margin-top:1rem">
+      <div class="tip-lbl">🏡 FINDING YOUR ENCLOSED GARDEN / GROUND FLOOR</div>
+      <p>On <strong>Immobilienscout24.de</strong> filter for: "Erdgeschoss" (ground floor), "Garten" (garden), "Terrasse mit Garten". For houses: "Einfamilienhaus mieten" or "Doppelhaus mieten". In Austria use <strong>willhaben.at</strong>. Facebook groups "Wohnung ${loc.nameDe}" are often faster than portals. Expat WhatsApp networks can surface unlisted properties. Consider a short-term stay first (Airbnb or furnished) to find the right neighbourhood before committing.</p>
+    </div>
+  </div>
+
+  <!-- TRANSPORT -->
+  <div class="pane" id="pane-transport">
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-val" style="color:var(--primary)">${loc.commuteMin === 0 ? 'On-site' : loc.commuteMin + ' min'}</div>
+        <div class="info-lbl">Train to ADI Munich</div>
+      </div>
+      <div class="info-card">
+        <div class="info-val ${scoreClass(loc.sc.rail)}">${loc.sc.rail}/10</div>
+        <div class="info-lbl">Rail Network Score</div>
+      </div>
+    </div>
+
+    <div class="stitle">Transport Details</div>
+    <p style="font-size:.83rem;line-height:1.65;color:#cbd5e1">${loc.transportNotes}</p>
+
+    <div class="tip" style="margin-top:1rem">
+      <div class="tip-lbl">🚂 COMMUTE REALITY CHECK (3 DAYS/WEEK)</div>
+      <p>${loc.commuteMin === 0
+        ? 'Zero commute — walk, cycle, or short tram ride to the ADI Munich office. Maximum flexibility.'
+        : `${loc.commuteMin} min each way = ${(loc.commuteMin * 2 / 60).toFixed(1)} hours per commute day. For 3 days/week: ~${(loc.commuteMin * 6 / 60).toFixed(1)} hours/week commuting. The <strong>Deutschlandticket</strong> (€58/month) covers all regional trains in Germany — excellent value. Austrian residents can use the <strong>KlimaTicket Österreich</strong> (~€91/month) for unlimited ÖBB travel.`
+      }</p>
+    </div>
+
+    <div class="tip" style="margin-top:.75rem">
+      <div class="tip-lbl">✈️ FLIGHTS HOME TO IRELAND</div>
+      <p>Munich Airport (MUC) is the main hub — Ryanair and Aer Lingus fly to Dublin and Cork. Munich–Dublin ~2h 30min. ${loc.country === 'AT' ? 'From Austrian locations, Salzburg Airport also has seasonal Ryanair routes to Dublin. Innsbruck Airport has some UK/Irish connections. Checking both MUC and SZG for best fares is worthwhile.' : 'From most Bavarian locations, MUC is straightforward. The S1 S-Bahn connects Munich city to the airport directly.'}</p>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="pane" id="pane-notes">
+    <p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">Your notes about ${loc.name}. Saved on this device automatically.</p>
+    <textarea class="notes-ta" id="notes-ta-${loc.id}" placeholder="Add your thoughts, questions, things to check... e.g. 'Found a great cooperative care vet here' or 'Rent seems high right now — check again in 3 months'">${savedNotes}</textarea>
+
+    <div class="tip" style="margin-top:1rem">
+      <div class="tip-lbl">📋 THINGS TO RESEARCH FOR ${loc.name.toUpperCase()}</div>
+      <p style="line-height:2">
+        ☐ Cooperative care / Fear Free vets in ${loc.nameDe}<br>
+        ☐ Specialist groomer (angstfreies Grooming)<br>
+        ☐ Dog boarding kennels near ${loc.nameDe}<br>
+        ☐ Expat Facebook/WhatsApp groups<br>
+        ☐ Immobilienscout24: Erdgeschoss + Garten listings<br>
+        ☐ Medical device companies hiring QA/microbiology<br>
+        ☐ Actual train timetable from your target neighbourhood<br>
+        ☐ Local Hundeverein (dog club) for socialisation<br>
+        ☐ Enclosed dog parks ("eingezäunter Hundepark")
+      </p>
+    </div>
+  </div>
+  `;
+}
+
+function saveNotes() {
+  if (!activeLoc) return;
+  const ta = document.getElementById('notes-ta-' + activeLoc.id);
+  if (ta) {
+    notes[activeLoc.id] = ta.value;
+    localStorage.setItem('rd-notes', JSON.stringify(notes));
+  }
+}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+buildWeightsPanel();
+renderCards();
+</script>
+</body>
+</html>
