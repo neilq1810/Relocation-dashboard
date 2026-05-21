@@ -303,13 +303,15 @@ main{padding:.9rem 1rem 4rem;}
 .info-val{font-size:1.1rem;font-weight:700;margin-bottom:.15rem;}
 .info-lbl{font-size:.68rem;color:var(--muted);}
 
-/* Company tags */
-.companies{display:flex;flex-wrap:wrap;gap:.35rem;margin:.5rem 0 1rem;}
-.co-tag{
-  background:rgba(56,189,248,.09);color:var(--primary);
-  border:1px solid rgba(56,189,248,.2);
-  padding:.2rem .55rem;border-radius:8px;font-size:.72rem;font-weight:500;
+/* Company list */
+.co-list{display:flex;flex-direction:column;gap:.5rem;margin:.5rem 0 1rem;}
+.co-item{
+  background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.15);
+  border-radius:var(--rs);padding:.65rem .8rem;
 }
+.co-name{font-size:.82rem;font-weight:700;color:var(--primary);margin-bottom:.25rem;}
+.co-what{font-size:.75rem;line-height:1.55;color:#cbd5e1;}
+.co-none{font-size:.8rem;color:var(--muted);font-style:italic;margin:.5rem 0 1rem;}
 
 /* Tip box */
 .tip{
@@ -439,8 +441,17 @@ const LOCS = [
     commuteText:'Office is here!', cost:'€3,200–4,800/mo',
     sc:{commute:10, medDev:10, dog:7, housing:3, cost:2, alps:5, lakes:7, expat:10, rail:10},
     highlight:'Zero commute — the ADI office is right here. Munich has the largest concentration of medical device companies in Germany. The trade-off is a seriously tough housing market.',
-    jobs:['Siemens Healthineers','GE HealthCare','Brainlab','Carl Zeiss Meditec','Becton Dickinson','B. Braun','Medi GmbH','BioNTech (nearby)'],
-    jobNotes:'Munich is arguably Germany\'s medical device capital. Siemens Healthineers alone employs thousands. Your partner would have exceptional choice across QA, regulatory affairs, microbiology, and sterility testing roles. English is standard in most international companies.',
+    companies:[
+      {name:'Brainlab AG', what:'Global HQ in Feldkirchen (15 min). Makes surgical navigation systems, digital OR integration software, and stereotactic radiosurgery planning platforms. ~2,000 employees. Strong QA, software validation, and regulatory affairs hiring.'},
+      {name:'Siemens Healthineers', what:'Major Munich commercial & R&D hub (main HQ Erlangen, 1.5 h). Medical imaging (MRI, CT, X-ray, fluoroscopy), laboratory diagnostics (immunoassay, molecular), digital health AI. Thousands of employees. QA, regulatory, quality engineering roles.'},
+      {name:'GE HealthCare', what:'German HQ in Munich. MRI, CT, ultrasound, patient monitoring systems, pharmaceutical diagnostics (contrast agents). DACH commercial hub — QA, regulatory affairs, and service quality roles.'},
+      {name:'Medtronic', what:'Munich office. Cardiac rhythm management (pacemakers, ICDs), neuromodulation, surgical robotics (Hugo™), diabetes tech (insulin pumps, CGM). QA, regulatory affairs, and clinical quality positions.'},
+      {name:'Carl Zeiss Meditec', what:'Munich commercial office (HQ Jena). Ophthalmic surgical & diagnostic devices, surgical microscopes for neurosurgery / ENT / spine, 3D visualisation systems. Commercial, regulatory, and service quality roles.'},
+      {name:'Stryker', what:'Munich/Bavaria office. Orthopaedic implants (joint replacement), powered surgical equipment, neurotechnology, emergency medical products (Physio-Control). QA, regulatory, and manufacturing quality.'},
+      {name:'Becton Dickinson (BD)', what:'German commercial base. Specimen collection systems, BD MAX molecular diagnostics, medication delivery & infusion therapy systems. Regulatory affairs and quality management roles.'},
+      {name:'Abbott', what:'Munich office. Cardiovascular devices (structural heart, electrophysiology), FreeStyle Libre CGM, rapid diagnostics, neuromodulation. Regulatory, QA, and clinical quality positions.'},
+    ],
+    jobNotes:'Munich is Germany\'s medical device capital. Your partner would have exceptional choice across QA, regulatory affairs, microbiology, and sterility testing roles at companies of every size. English is the working language in most international companies here.',
     dogNotes:'Munich is surprisingly dog-friendly. The English Garden (bigger than Central Park) has off-lead zones. Cooperative care vets and specialist groomers are available — search "cooperative care München" or "Fear Free vet München". Boarding options are plentiful city-wide.',
     housingNotes:'The toughest rental market in Germany. Expect €1,800–2,500/month for a decent 2BR. Garden apartments ("Erdgeschoss mit Garten") exist but are premium and disappear instantly. Try Schwabing, Haidhausen, Pasing, or Neuhausen. Be ready to act fast and have documents prepared.',
     transportNotes:'Exceptional — S-Bahn, U-Bahn, trams, buses. The Deutschlandticket (€58/month) covers all regional transport. ICE hub to Vienna, Salzburg, and all German cities. Munich Airport (S1 direct) for Dublin/Cork flights.',
@@ -456,8 +467,12 @@ const LOCS = [
     commuteText:'~35 min to Munich', cost:'€1,900–2,800/mo',
     sc:{commute:9, medDev:7, dog:7, housing:7, cost:7, alps:4, lakes:5, expat:7, rail:8},
     highlight:'Affordable city life, 35 minutes from ADI by train. Bavaria\'s third-largest city with real character, much lower costs, and a liveable rental market.',
-    jobs:['Krones AG','University Hospital Augsburg (UKA)','MTU Aero Engines','SGL Carbon','Full Munich network 35 min away'],
-    jobNotes:'Augsburg\'s University Hospital Augsburg is a large employer, and proximity to Munich\'s huge market is the main draw. Many people commute Munich→Augsburg for the lower rents. English spoken in most international companies.',
+    companies:[
+      {name:'University Hospital Augsburg (UKA)', what:'Large new teaching hospital that became a full university hospital in 2019 (~5,000 employees). Has an in-house microbiology & infection control department, medical device sterilisation QA, and sterility testing lab — directly relevant to your partner\'s background. A realistic local employer.'},
+      {name:'KUKA AG — Medical Division', what:'HQ in Augsburg. World-leading robotics company with a growing medical division covering surgical robotics and rehabilitation robotics (e.g. exoskeletons). Quality and regulatory engineering roles in a manufacturing context.'},
+      {name:'Full Munich network via train (35 min)', what:'Augsburg\'s proximity to Munich gives access to the entire Munich medtech cluster — Siemens Healthineers, GE HealthCare, Brainlab, Medtronic and more. Many professionals commute this route.'},
+    ],
+    jobNotes:'Augsburg has real local options — the UKA is a significant and relevant hospital employer, and KUKA\'s medical division adds manufacturing-side roles. But the main career multiplier is the 35-minute train to Munich\'s full medtech cluster.',
     dogNotes:'Very dog-friendly. The Lech river parks and Stadtwald (city forest) offer excellent off-lead areas. Good range of vet practices. A 300K-population city supports specialist groomers and cooperative care practitioners.',
     housingNotes:'Significantly more affordable than Munich. A nice 2BR with garden could be €1,100–1,600/month. Much better stock and less frantic competition. The Innenstadt and Haunstetten areas have a mix of apartments and houses.',
     transportNotes:'Direct Regional Express and ICE trains to Munich every 15–30 minutes, 30–40 min journey. Excellent frequency. Local trams within the city. Deutschlandticket covers everything.',
@@ -473,8 +488,10 @@ const LOCS = [
     commuteText:'~28 min to Munich (S6)', cost:'€2,400–3,800/mo',
     sc:{commute:9, medDev:6, dog:8, housing:5, cost:4, alps:6, lakes:10, expat:8, rail:8},
     highlight:'Living directly on the stunning Starnberger See with a 28-minute S-Bahn into the ADI office. Premium lifestyle in Bavaria\'s lake district — pricey, but spectacular.',
-    jobs:['Full Munich network via S6 (28 min)','Siemens Healthineers (15 min to Munich)','Carl Zeiss Meditec','Many C-suite professionals commute from here'],
-    jobNotes:'Starnberg is a small town of 23,000 but 28 minutes by S6 S-Bahn gives full access to Munich\'s entire medical device job market. Many senior professionals choose to live here and commute — your partner would be in good company.',
+    companies:[
+      {name:'Full Munich medtech cluster (28 min)', what:'The S6 S-Bahn puts your partner 28 minutes from Brainlab, Siemens Healthineers, GE HealthCare, Medtronic, Stryker, Abbott, Becton Dickinson and the full Munich cluster. Starnberg is specifically where many senior Munich professionals choose to live — the commute is very well established.'},
+    ],
+    jobNotes:'No significant medtech employers locally, but that\'s the whole point of Starnberg — premium lakeside living with a 28-minute commute to Munich\'s entire job market. Your partner would be in excellent company; many senior Munich professionals live here.',
     dogNotes:'Excellent. The Starnberger See shoreline offers beautiful lakeside walks. Plenty of off-lead areas in the woods above the town. Dog-positive culture. Good local vets. This affluent international community expects high-quality pet services.',
     housingNotes:'Starnberg approaches Munich prices — it\'s one of Bavaria\'s wealthiest areas. A 2BR apartment with garden might be €1,600–2,500/month. Less stock than Munich but more gardens and houses. Ground-floor apartments do come up. Worth monitoring Immobilienscout24 closely.',
     transportNotes:'S6 S-Bahn runs direct to Munich Marienplatz/Hauptbahnhof, ~28 minutes, every 20 minutes. Very reliable. Car useful for exploring the lake area and driving south to the Alps.',
@@ -490,8 +507,13 @@ const LOCS = [
     commuteText:'~38 min to Munich (S1)', cost:'€1,700–2,500/mo',
     sc:{commute:9, medDev:7, dog:7, housing:7, cost:6, alps:3, lakes:4, expat:7, rail:8},
     highlight:'Charming historic town 38 minutes from ADI by S-Bahn, and 10 minutes from Munich Airport — brilliant for trips home to Ireland. Better value than Munich with a real community feel.',
-    jobs:['TU Munich Weihenstephan Campus','University Hospital Rechts der Isar (30 min)','Munich biotech cluster (Martinsried, 45 min)','Full Munich network via S1'],
-    jobNotes:'Freising has TU Munich\'s Weihenstephan campus (life sciences) and is close to Munich\'s medical network. The main draw for your partner is the fast S1 connection to the Munich med-device cluster. English widely spoken in companies.',
+    companies:[
+      {name:'TU Munich — Weihenstephan Campus', what:'Life sciences research campus on the edge of Freising. Biotechnology, food science, and some biomedical research. Potential lab/research-adjacent roles. Not a primary medtech employer but good ecosystem.'},
+      {name:'Munich Klinikum Rechts der Isar (30 min by S1)', what:'Major TU Munich teaching hospital. Microbiology and infection control departments, device sterilisation, clinical QA roles. 30 minutes door-to-door from Freising — a realistic commute target.'},
+      {name:'Martinsried Biotech Cluster (45 min)', what:'Munich\'s main biotech/pharma hub near the university. Home to companies like MorphoSys, Medigene, and multiple spin-offs. QA, regulatory, and research roles. Accessible by S1 + U6.'},
+      {name:'Full Munich medtech cluster (38 min via S1)', what:'All of Munich\'s major medtech employers (Brainlab, Siemens Healthineers, GE HealthCare, Medtronic, etc.) are 38–50 min from Freising\'s front door.'},
+    ],
+    jobNotes:'Freising itself has limited medtech, but the S1 S-Bahn makes both the Munich medtech cluster and Martinsried biotech hub very accessible. The 38-minute commute to Munich\'s job market is extremely competitive for the quality of life and affordability you get in return.',
     dogNotes:'Dog-friendly university town atmosphere. Good walks along the Isar river and in the city forest (Domberg area). Solid local vet practices. The medium size (50K) supports a range of pet services without the big-city chaos.',
     housingNotes:'More affordable than Munich. A 2BR with garden could be €1,100–1,600/month. Good availability of ground-floor apartments and small houses. Less competition than Munich or Starnberg. The Lerchenfeld and Pulling suburbs have more garden properties.',
     transportNotes:'S1 direct to Munich HBF ~38 min, also connects to Munich Airport in ~10 minutes — ideal for Ryanair/Aer Lingus trips home. Very frequent service. Deutschlandticket covers all of it.',
@@ -507,8 +529,12 @@ const LOCS = [
     commuteText:'~50 min to Munich', cost:'€1,600–2,400/mo',
     sc:{commute:8, medDev:6, dog:9, housing:7, cost:6, alps:8, lakes:7, expat:6, rail:8},
     highlight:'Gateway to the Alps and Bavaria\'s lake country. Solid 50-minute commute, outdoorsy culture, and genuinely affordable — with the Inn river and Chiemsee on your doorstep.',
-    jobs:['Klinikum Rosenheim (district hospital)','HOERBIGER Group','Proximity: Munich network (50 min)','Kufstein/Innsbruck corridor accessible'],
-    jobNotes:'Rosenheim has a decent regional economy and a good district hospital. The main medical device market is Munich, 50 min away by direct train — very manageable. Kufstein and Innsbruck are also accessible for Austrian opportunities.',
+    companies:[
+      {name:'Klinikum Rosenheim', what:'District hospital serving the region (~1,200 beds). Has in-house microbiology, sterility testing, and infection control functions. Smaller scale than a university hospital but a realistic local employer for your partner\'s background.'},
+      {name:'Full Munich medtech cluster (50 min)', what:'Direct hourly trains give access to Munich\'s full employer market — Siemens Healthineers, Brainlab, GE HealthCare, Medtronic, Stryker, and more. 50 min is very manageable for 3 days/week.'},
+      {name:'Innsbruck corridor (MED-EL, Sandoz — 55 min)', what:'The Kufstein/Innsbruck direction also opens MED-EL (cochlear implants HQ) and Sandoz\'s enormous Kundl pharma plant — both major medtech/pharma QA employers. A useful alternative direction.'},
+    ],
+    jobNotes:'Rosenheim\'s Klinikum is a real local option for your partner. But the main career advantage is being at the junction of the Munich corridor (50 min) and the Innsbruck corridor (55 min), which opens up two completely separate medtech job markets.',
     dogNotes:'Outstanding. Inn river walks, surrounding countryside, and Alpine culture mean dogs are truly part of life here. The outdoorsy population means great off-lead areas, good boarding kennels, and a culture that welcomes dogs everywhere.',
     housingNotes:'More affordable than northern Bavaria. Houses with gardens are achievable. A nice 3BR with enclosed garden might be €1,100–1,700/month. Better availability than Munich and significantly less competition. Perfect for your housing requirements.',
     transportNotes:'Direct trains to Munich every 30 minutes (~50 min). On the main Munich–Salzburg rail corridor. Car very useful for Alps and lake exploration. Excellent Deutschlandticket coverage.',
@@ -524,8 +550,12 @@ const LOCS = [
     commuteText:'~60 min to Munich', cost:'€1,400–2,100/mo',
     sc:{commute:8, medDev:5, dog:9, housing:8, cost:7, alps:7, lakes:10, expat:6, rail:7},
     highlight:'Directly on Bavaria\'s biggest lake with Alpine views. Small-town paradise for dogs and outdoor life. The 60-minute train commute is very liveable for 3 days a week.',
-    jobs:['Rosenheim regional hospital (20 min)','Klinikum Wasserburg','Munich full network (60 min)','Traunstein regional'],
-    jobNotes:'Prien is small (11K), so your partner would commute to Munich (1 hour) or Rosenheim for medical device roles. Very manageable for 3 days/week. Remote/hybrid options would be transformative here.',
+    companies:[
+      {name:'Klinikum Rosenheim (20 min)', what:'Regional district hospital 20 minutes away. In-house microbiology and infection control roles. A local option without needing to go to Munich.'},
+      {name:'Full Munich medtech cluster (60 min)', what:'Direct Munich–Salzburg mainline trains reach Munich in ~60 min, opening Brainlab, Siemens Healthineers, Medtronic, and all major employers. Very workable for 3 days/week.'},
+      {name:'Salzburg corridor (Austria — 45 min)', what:'Prien is also positioned between Munich and Salzburg. The Paracelsus Medical University and Salzburg University Hospital are 45 min east — adding Austrian options.'},
+    ],
+    jobNotes:'Prien\'s small size means local employment is limited, but the strategic position on the Munich–Salzburg mainline opens job markets in both directions. Your partner would most likely target Munich (60 min) or Rosenheim (20 min) as primary options.',
     dogNotes:'Outstanding for dogs. The Chiemsee shoreline is enormous and gorgeous for off-lead swimming and running. Very dog-friendly community — outdoor culture through and through. Local vets, regional boarding kennels. An excellent environment for a dog needing calm, natural surroundings.',
     housingNotes:'Genuinely achievable for your requirements. Houses with enclosed gardens are available and affordable. A 3BR with garden might be €1,000–1,500/month. Prien\'s small size means manageable competition — you\'d have real choices here.',
     transportNotes:'On the Munich–Salzburg mainline with direct trains ~60 min. Good frequency. Car very useful for daily life and exploring. The Chiemsee is also served by a lovely historic ferry to the islands.',
@@ -541,8 +571,11 @@ const LOCS = [
     commuteText:'~60 min to Munich', cost:'€1,300–1,900/mo',
     sc:{commute:7, medDev:5, dog:9, housing:9, cost:7, alps:7, lakes:9, expat:5, rail:7},
     highlight:'Sweet spot between three stunning lakes and the Alps. Affordable, genuinely Bavarian, and excellent for the enclosed garden you need. Hidden gem of the region.',
-    jobs:['Schongau hospital (local)','Weilheim district services','Munich network via train (~60 min)','Augsburg accessible (1.5 hours)'],
-    jobNotes:'Small local economy; your partner would realistically commute to Munich for medical device roles. The train connection makes this manageable. Remote/hybrid working would make Weilheim an even stronger choice.',
+    companies:[
+      {name:'Klinikum Schongau (15 min)', what:'District hospital serving the Pfaffenwinkel region. Small-scale but has microbiology and device management functions. A local option for hospital-side QA roles.'},
+      {name:'Full Munich medtech cluster (60 min)', what:'BOB train to Munich opens access to all major employers. For 3 days/week this is very workable. Many people in this region make this commute for Munich salaries.'},
+    ],
+    jobNotes:'Weilheim has very limited local medtech. The Munich commute (60 min) is the realistic path for your partner\'s career. Hybrid/remote working would be transformative here — this is a place where the lifestyle is the priority, not the local job market.',
     dogNotes:'Exceptional. The Pfaffenwinkel region — rolling hills, meadows, lakes, and easy Alpine access — is a natural paradise for dogs. Very relaxed, outdoor community. Good local vets. Off-lead areas abundant. Calm environment: ideal for a dog with behavioural sensitivities.',
     housingNotes:'One of the best options for your specific requirements. Genuinely affordable houses with enclosed gardens are realistic here. A 3BR house with good garden could be €900–1,400/month. Low competition. This is where the enclosed outdoor space you need actually becomes achievable.',
     transportNotes:'BOB train line toward Munich (changes at Weilheim junction) ~60 min total. Car strongly recommended for daily life and exploring the lakes. Central position between Ammersee, Starnberger See, and Staffelsee.',
@@ -558,8 +591,12 @@ const LOCS = [
     commuteText:'~72 min to Munich', cost:'€1,500–2,200/mo',
     sc:{commute:7, medDev:5, dog:10, housing:7, cost:7, alps:9, lakes:8, expat:5, rail:6},
     highlight:'Stunning spa town right at the Alpine foothills. 20 minutes from the gorgeous Tegernsee. The Isar river runs through town — an incredible dog walking environment.',
-    jobs:['Schön Klinik (private hospital group HQ — right here!)','Klinikum Bad Tölz-Wolfratshausen','Munich network via BOB train (~72 min)'],
-    jobNotes:'Notably, Schön Klinik — a major private German hospital group — has connections to Bad Tölz and may have QA/regulatory roles worth checking. Otherwise, Munich is the target via BOB train. 72 minutes 3x/week is manageable.',
+    companies:[
+      {name:'Schön Klinik Bad Tölz', what:'Private specialist clinic (orthopaedics, psychosomatic medicine) in the Schön Klinik group — one of Germany\'s largest private hospital groups. Hospital-side device QA, sterilisation, and infection control roles. Smaller scale but directly local.'},
+      {name:'Klinikum Wolfratshausen (30 min)', what:'District hospital covering southern Bavaria. In-house microbiology and device management. Another local hospital-side option for your partner.'},
+      {name:'Full Munich medtech cluster (72 min)', what:'BOB train to Munich Ostbahnhof ~72 min. Access to all Munich employers — Brainlab, Siemens Healthineers, GE HealthCare, Medtronic and more. Demanding for 3x/week but doable.'},
+    ],
+    jobNotes:'Bad Tölz has limited but real local options in the private hospital sector. The honest picture is that Munich (72 min) is the target for medtech industry careers. The BOB train journey, while longer, runs through beautiful scenery and is perfectly workable for 3 days/week.',
     dogNotes:'Truly outstanding. The Isar river flows right through town with beautiful riverside walks. Surrounding Alpine forests and meadows mean unlimited off-lead exploration. The spa-town culture is relaxed and unhurried — excellent for a sensitive dog. Specialist services available regionally.',
     housingNotes:'More affordable than northern Bavaria. A mix of apartments and houses available. 3BR with garden possible around €1,100–1,700/month. The spa-town character means a rental market exists. Better options for enclosed outdoor space than Munich suburbs.',
     transportNotes:'BOB (Bayerische Oberlandbahn) to Munich Ostbahnhof ~72 min. Frequency is reasonable but less than S-Bahn. Car is recommended. Tegernsee is a quick drive. The journey to Munich is scenic through the foothills.',
@@ -575,8 +612,12 @@ const LOCS = [
     commuteText:'~88 min to Munich', cost:'€1,700–2,600/mo',
     sc:{commute:6, medDev:3, dog:10, housing:6, cost:5, alps:10, lakes:8, expat:7, rail:7},
     highlight:'Germany\'s most famous mountain resort — the Zugspitze on your doorstep. International ski town. The commute is a stretch but for the Alps access it might just be worth it.',
-    jobs:['Limited local — mainly tourism/hospitality','Munich 90 min away — viable for 3 days/week','Innsbruck accessible too (30 min by train)'],
-    jobNotes:'Very limited locally for medical devices. Munich commute of ~88 min each way is around 3 hours return — at your stated maximum. Feasible for 3 days/week but tiring. This works best if your partner can work remotely or hybrid.',
+    companies:[
+      {name:'Klinikum Garmisch-Partenkirchen', what:'District hospital serving the mountain region. In-house microbiology and device sterilisation. Very small scale — more of an emergency/local facility than a career employer.'},
+      {name:'Innsbruck medtech cluster (30 min)', what:'Garmisch is only 30 min by train to Innsbruck — opening MED-EL (cochlear implants HQ), TILAK university hospital, Medical University of Innsbruck, and the Sandoz Kundl plant. Innsbruck is a far better job market than the local area.'},
+      {name:'Full Munich medtech cluster (88 min)', what:'Direct BEG trains reach Munich in ~88 min — at the limit of your stated 2-hour maximum. Feasible for 3 days/week but the longest German-side commute on this list.'},
+    ],
+    jobNotes:'Garmisch has very limited local medtech — it\'s fundamentally a tourism and mountain economy. The career strategy from here would be Innsbruck (30 min, excellent market) or Munich (88 min, at the limit). This is primarily a lifestyle choice where your partner\'s career would ideally involve remote/hybrid working.',
     dogNotes:'Simply outstanding. This is a mountain paradise for dogs. Alpine meadows, forest trails, clear streams, and the Eibsee — all off-lead friendly. International resort means people here are very relaxed and dog-positive. Specialist services available for an international community.',
     housingNotes:'Tourist area creates some premium pricing but permanent resident market is separate. Ground-floor apartments and houses are achievable — mountain towns have more horizontal space. 2–3BR with garden might be €1,300–2,000/month. Some competition from holiday-home buyers.',
     transportNotes:'Direct BEG trains to Munich HBF ~88 min, roughly hourly. Reliable service. Car useful for winter and mountain access. Innsbruck only 30 min by train. International connections good for a ski resort town.',
@@ -592,8 +633,12 @@ const LOCS = [
     commuteText:'~80 min to Munich', cost:'€1,200–1,900/mo',
     sc:{commute:6, medDev:4, dog:9, housing:9, cost:8, alps:9, lakes:10, expat:5, rail:6},
     highlight:'On the beautiful Staffelsee with the Alps as a backdrop. Famously artistic and peaceful. Excellent housing options with gardens. A hidden gem that punches above its weight.',
-    jobs:['Limited local','Munich via BOB train ~80 min','Weilheim district hospital (15 min)'],
-    jobNotes:'Murnau is a small artistic town — employment means commuting to Munich. For 3 days/week this is the stretch. Hybrid/remote work transforms this place into an exceptional choice. Well worth considering if flexible working is possible.',
+    companies:[
+      {name:'Garmisch-Partenkirchen district hospital (20 min)', what:'The nearest hospital with microbiology/device functions is in Garmisch, 20 min by car. Small scale — a potential local option for hospital-side QA roles.'},
+      {name:'Schongau Klinikum (25 min)', what:'District hospital to the north. Similar small-scale hospital-side opportunities for microbiology and device sterilisation QA.'},
+      {name:'Full Munich medtech cluster (80 min)', what:'BOB line to Munich ~80 min with a change. The full Munich employer market is accessible but the commute is among the longer ones on this list. Best suited to 3 days/week if hybrid working is available for the remaining days.'},
+    ],
+    jobNotes:'Murnau is fundamentally a lifestyle-first choice — the local employment options are very limited. The Munich commute (80 min) is at the demanding end for 3 days/week. This location makes most sense if your partner can work remotely or hybrid the other days.',
     dogNotes:'Exceptional. The Staffelsee shoreline, Alpine meadows, and the quiet rural paths make this an ideal environment for a dog needing calm, natural, uncrowded surroundings. Very low-stress for dogs with sensitivities. Specialist services a short drive to Weilheim or Garmisch.',
     housingNotes:'This is where your housing dreams become most achievable. Genuinely affordable — a 3BR house with large enclosed garden might be €900–1,300/month. Low competition. Good stock of houses and ground-floor apartments. This is the strongest option for your enclosed outdoor space requirement.',
     transportNotes:'BOB line toward Munich ~80 min (with change). Car strongly recommended. The drive to Munich along the lakes and through the foothills is scenic. Garmisch-Partenkirchen is 20 min by car.',
@@ -609,8 +654,15 @@ const LOCS = [
     commuteText:'~58 min to Munich (Railjet)', cost:'€1,400–2,100/mo',
     sc:{commute:8, medDev:5, dog:9, housing:8, cost:7, alps:9, lakes:7, expat:6, rail:8},
     highlight:'Dramatic fortress town in the Austrian Tyrol, 58 minutes from ADI by direct Railjet. Right in the Alps, great rail link, and positioned between Munich and Innsbruck job markets.',
-    jobs:['Innsbruck University Hospital (40 min)','Rosenheim regional (30 min across border)','Munich full network (58 min)','Austrian pharmaceutical sector (Innsbruck)'],
-    jobNotes:'Kufstein\'s unique advantage: it sits between Munich (58 min) and Innsbruck (40 min). Your partner could target both cities\' medical device markets. Innsbruck has a growing biotech scene anchored by its Medical University. EU citizens face no extra bureaucracy moving to Austria.',
+    companies:[
+      {name:'MED-EL — Innsbruck HQ (40 min)', what:'Cochlear implants, bone-anchored hearing systems, and middle ear implants. ~2,400 employees globally, HQ in Innsbruck. Manufacturing QA, sterility/microbiology validation, and regulatory affairs roles. One of the best potential direct employers for your partner in the entire region.'},
+      {name:'Sandoz GmbH (Novartis) — Kundl (55 min)', what:'One of Europe\'s largest generic pharmaceutical manufacturing sites (Kundl, east of Innsbruck). QA microbiology, sterility testing, environmental monitoring, regulatory affairs. Extremely relevant to your partner\'s exact expertise. Major employer.'},
+      {name:'TILAK — Innsbruck University Hospital (40 min)', what:'Tiroler Landeskrankenanstalten GmbH — large university hospital group (~6,500 employees). In-house microbiology lab, sterilisation QA, infection control, medical device management. A realistic direct employer.'},
+      {name:'Medical University of Innsbruck (40 min)', what:'Research and clinical roles — sterility testing, microbiology, device validation for clinical trials. Strong fit for your partner\'s QA/micro background in a research context.'},
+      {name:'Klinikum Rosenheim (30 min across border)', what:'German district hospital a short drive north. In-house microbiology and device management functions. Adds a cross-border German-side option.'},
+      {name:'Full Munich medtech cluster (58 min)', what:'Direct Railjet to Munich opens Brainlab, Siemens Healthineers, GE HealthCare, Medtronic, and the full cluster. A 58-minute commute for 3 days/week is very manageable.'},
+    ],
+    jobNotes:'Kufstein\'s unique advantage is being positioned between two excellent job markets. MED-EL and Sandoz in the Innsbruck corridor are among the best potential employers for your partner\'s exact skill set — microbiology QA, sterility testing, ISO 13485 — without needing Munich.',
     dogNotes:'Excellent. The Wilder Kaiser mountains rise directly above the town. Inn river promenade for walks. Very outdoorsy Austrian culture where dogs are a natural part of life. Good local vets in Kufstein. Specialist services in Rosenheim (30 min) or Innsbruck (40 min).',
     housingNotes:'Austrian rental prices are generally lower than equivalent Bavarian towns. Good availability of houses with gardens. A 3BR house with enclosed garden might be €1,000–1,500/month. Austrian tenancy law is also notably more tenant-friendly than German law.',
     transportNotes:'On the main Munich–Innsbruck–Vienna rail line. Railjet trains to Munich ~58 min, hourly. Excellent frequency. ÖBB network is world-class. Car useful for exploring the mountains.',
@@ -626,8 +678,14 @@ const LOCS = [
     commuteText:'~95 min to Munich', cost:'€1,700–2,800/mo',
     sc:{commute:6, medDev:7, dog:8, housing:6, cost:6, alps:9, lakes:9, expat:9, rail:8},
     highlight:'One of Europe\'s most beautiful cities, surrounded by Alpine lakes and mountains. Growing life sciences scene, highly international — and Munich is reachable in 95 minutes direct.',
-    jobs:['Paracelsus Medical University','Salzburg University Hospital (SALK)','Anton Paar (precision instruments)','Red Bull GmbH nearby','Growing Salzburg tech/life science cluster'],
-    jobNotes:'Salzburg has a genuine life sciences cluster anchored by Paracelsus Medical University and SALK. Your partner could find QA, sterility testing, and regulatory affairs roles locally without needing Munich. Munich remains accessible for top-tier positions.',
+    companies:[
+      {name:'Salzburg University Hospital (SALK / LKH)', what:'Large regional teaching hospital (~7,000 employees). Has in-house microbiology & infection control department, device sterilisation QA, sterility testing, and clinical device management. A highly realistic direct employer for your partner — this is one of the strongest hospital-side options outside Munich.'},
+      {name:'Paracelsus Medical University (PMU)', what:'Private medical university with active clinical research programmes. Sterility testing, microbiology research, device validation for clinical trials, regulatory affairs support. Good fit for a QA microbiologist wanting to work at the research/industry interface.'},
+      {name:'Greiner Bio-One (Kremsmünster — 1 hour)', what:'Major Austrian manufacturer of laboratory plastics, blood collection systems (Vacuette), cell culture products, and diagnostic devices. Quality, microbiology, and regulatory affairs roles. About 1 hour from Salzburg — a feasible commute target.'},
+      {name:'VAMED AG', what:'Austrian healthcare infrastructure company with Salzburg operations. Manages and operates hospitals, provides medical engineering services, and handles device lifecycle management. QA and device management roles.'},
+      {name:'Full Munich medtech cluster (95 min)', what:'Direct RailJet trains reach Munich in ~95 min, opening Brainlab, Siemens Healthineers, GE HealthCare, Medtronic and all major employers. Longer but feasible for 3 days/week.'},
+    ],
+    jobNotes:'Salzburg stands out because your partner may not need Munich at all. SALK is a substantial hospital employer, PMU offers research-side roles, and Greiner Bio-One adds a manufacturing quality option. This is the strongest local job market outside Munich/Innsbruck on this list.',
     dogNotes:'Dog-friendly city with the Salzach river promenade, Untersberg mountain at the edge of town, and the vast Salzkammergut lake district on the doorstep. Specialist vets and groomers available in a city of 155K. Austrian culture is very dog-positive.',
     housingNotes:'Salzburg is popular and housing is competitive but more manageable than Munich. Austrian rents are generally lower. A 2–3BR apartment with garden might be €1,300–2,000/month. The outer districts (Gneis, Maxglan, Taxham) offer better value with more garden options.',
     transportNotes:'Direct RailJet/IC trains to Munich every 30–60 min, ~95 min journey. Very reliable. Salzburg has its own bus and trolleybus network. ÖBB is excellent. Salzburg Airport also has direct Dublin flights (Ryanair seasonal) — useful!',
@@ -643,8 +701,15 @@ const LOCS = [
     commuteText:'~110 min to Munich', cost:'€1,600–2,600/mo',
     sc:{commute:5, medDev:7, dog:9, housing:6, cost:6, alps:10, lakes:7, expat:8, rail:8},
     highlight:'The ultimate Alpine city — surrounded by 2,000m peaks on all sides. World-class university with a Medical University. Ski-in ski-out lifestyle. The commute is the longest but the setting is extraordinary.',
-    jobs:['Medical University of Innsbruck (prestigious MUI)','Innsbruck University Hospital (TILAK)','Blum (manufacturing/engineering)','Growing Tyrol biotech startup scene','Sandoz (Novartis generics) — Kundl, 30 min away'],
-    jobNotes:'The Medical University of Innsbruck is a major employer and reputation hub for QA/regulatory/microbiology in medical devices and pharma. Sandoz (Novartis generics division) in Kundl, 30 min away, is one of Europe\'s largest pharmaceutical sites. Strong local market without needing Munich.',
+    companies:[
+      {name:'MED-EL', what:'Global HQ in Innsbruck. Manufactures cochlear implants, bone-anchored hearing implants, middle ear implants, and electro-neural stimulation devices. ~2,400 employees worldwide. Roles in manufacturing QA, sterility/microbiology validation, regulatory affairs (EU MDR), and product quality. Your partner\'s most direct potential local employer in the entire region.'},
+      {name:'Sandoz GmbH (Novartis) — Kundl plant', what:'30 min east of Innsbruck. One of Europe\'s single largest generic pharmaceutical manufacturing sites. QA microbiology (environmental monitoring, sterility testing, water testing), regulatory affairs, and quality systems (GMP). Highly relevant to your partner\'s exact background. Major employer — thousands of staff at this site.'},
+      {name:'Medical University of Innsbruck (MUI)', what:'Prestigious Austrian medical university. Clinical research in microbiology, device validation, sterility assurance, and regulatory affairs for clinical trials. Quality and research roles for a QA microbiologist wanting a research-adjacent career.'},
+      {name:'TILAK — Innsbruck University Hospital', what:'Tiroler Landeskrankenanstalten GmbH — university hospital group with ~6,500 employees. In-house microbiology lab (one of Austria\'s leading), sterilisation QA, infection control, device procurement and management. A highly realistic direct employer.'},
+      {name:'Igenomix Austria', what:'Reproductive genetics and genomics company with Innsbruck presence (connected to the university fertility clinic). QA and laboratory roles in a regulated medical environment.'},
+      {name:'Full Munich medtech cluster (110 min)', what:'Direct RailJet to Munich ~110 min — the longest commute on this list. Best treated as a backup market rather than primary option; the Innsbruck local market is strong enough to stand alone.'},
+    ],
+    jobNotes:'Innsbruck has the strongest local medtech job market outside Munich on this entire list. MED-EL alone is a world-class employer perfectly matched to your partner\'s QA/microbiology background. Sandoz in Kundl is one of the most relevant pharma QA sites in Europe. Your partner could likely find an excellent role without ever commuting to Munich.',
     dogNotes:'Exceptional. Mountain trails from the city edge, the Inn river promenade, the Nordkette cable car area (dog-friendly). Very dog-positive Austrian culture. University city means progressive, international attitudes. Good specialist vet services.',
     housingNotes:'University city — housing is in demand and getting more expensive. A 2BR with terrace/garden might be €1,200–1,900/month. Outer districts (Igls, Aldrans, Rum, Völs) offer better value and more garden options. Houses available outside the city centre.',
     transportNotes:'Direct RailJet to Munich ~110 min, every 2 hours. ÖBB is excellent. Innsbruck has modern trams and buses. Garmisch-Partenkirchen is only 30 min by train — adds another job market and incredible hiking.',
@@ -660,8 +725,12 @@ const LOCS = [
     commuteText:'~72 min to Munich', cost:'€1,300–2,000/mo',
     sc:{commute:7, medDev:5, dog:8, housing:8, cost:8, alps:5, lakes:7, expat:5, rail:6},
     highlight:'Beautiful medieval walled town on the Lech river. Affordable, charming, and positioned between Munich and Augsburg. The Ammersee is 30 minutes away.',
-    jobs:['Klinikum Landsberg','AGCO (agri-machinery) — local','Augsburg medical cluster (30 min)','Munich network (72 min)'],
-    jobNotes:'Small local market but well-positioned between Augsburg (30 min) and Munich (72 min). Your partner could target both cities. Augsburg\'s University Hospital is a viable option for medical/QA roles.',
+    companies:[
+      {name:'Klinikum Landsberg am Lech', what:'Local district hospital. Small-scale microbiology and device sterilisation functions. A local option for hospital-side QA roles, though limited in scope.'},
+      {name:'University Hospital Augsburg / KUKA Medical (30 min)', what:'Augsburg is 30 min away and has the UKA (teaching hospital, ~5,000 staff, in-house microbiology) and KUKA\'s medical robotics division. A realistic target without the full Munich commute.'},
+      {name:'Full Munich medtech cluster (72 min)', what:'Munich is 72 min by train (with one change). Opens the full Brainlab, Siemens Healthineers, Medtronic, and broader cluster. Manageable for 3 days/week.'},
+    ],
+    jobNotes:'Landsberg is well-placed between two job markets. Augsburg (30 min) offers UKA and KUKA Medical without going all the way to Munich. Munich (72 min) remains accessible for the full cluster. A good middle-ground option for managing commute vs lifestyle.',
     dogNotes:'Very dog-friendly. The Lech river and surrounding Lechrain landscape — meadows, forests, river beaches — are excellent for off-lead walking. The community is relaxed and outdoor-oriented. Good local vets.',
     housingNotes:'Affordable and good availability. One of the better options for your enclosed garden requirement. A 3BR house with garden might be €900–1,400/month. Low competition. The historic old town is beautiful and practical for everyday life.',
     transportNotes:'Train connection to Munich requires a change — total ~72 min. Bus connections to Augsburg. Direct Augsburg–Landsberg routes exist. Car is useful. Not the strongest rail link but manageable for 3 days/week.',
@@ -996,9 +1065,15 @@ function renderModalBody(loc) {
     </div>
 
     <div class="stitle">Companies &amp; Employers Nearby</div>
-    <div class="companies">
-      ${loc.jobs.map(j => `<span class="co-tag">${j}</span>`).join('')}
-    </div>
+    ${loc.companies.length
+      ? `<div class="co-list">${loc.companies.map(c => `
+          <div class="co-item">
+            <div class="co-name">🏢 ${c.name}</div>
+            <div class="co-what">${c.what}</div>
+          </div>`).join('')}
+        </div>`
+      : `<p class="co-none">No significant local medtech employers — see commute options below.</p>`
+    }
 
     <div class="stitle">Job Market Assessment</div>
     <p style="font-size:.83rem;line-height:1.65;color:#cbd5e1">${loc.jobNotes}</p>
