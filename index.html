@@ -118,6 +118,49 @@ body{
   cursor:pointer;margin-left:auto;flex-shrink:0;
 }
 
+/* ── DIRECTION FILTER ── */
+.dir-head{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:.5rem;margin:.1rem 0 .35rem;
+}
+.dir-head span{
+  font-size:.7rem;color:var(--muted);font-weight:600;
+  text-transform:uppercase;letter-spacing:.05em;
+}
+.dir-clear{
+  background:transparent;border:1px solid var(--border);color:var(--muted);
+  padding:.2rem .6rem;border-radius:20px;font-size:.68rem;cursor:pointer;
+}
+.dir-clear:hover{border-color:var(--border-strong);color:var(--text);}
+.dir-bar{padding-bottom:.55rem;}
+.dir-pill{display:inline-flex;align-items:center;gap:.32rem;}
+.dir-pill.active{
+  background:rgba(52,211,153,.16);color:var(--accent);
+  border-color:rgba(52,211,153,.5);
+}
+.dir-arrow{font-size:.9rem;line-height:1;}
+.dir-count{
+  font-size:.62rem;font-weight:700;opacity:.65;
+  background:rgba(255,255,255,.10);border-radius:8px;padding:.05rem .3rem;
+}
+.dir-pill.active .dir-count{background:rgba(52,211,153,.2);}
+
+/* Direction chip on cards */
+.pill-row{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.8rem;}
+.pill-row .commute-pill{margin-bottom:0;}
+.dir-chip{
+  display:inline-flex;align-items:center;gap:.3rem;
+  background:rgba(52,211,153,.12);color:var(--accent);
+  padding:.22rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600;
+}
+
+/* Empty state */
+.empty{
+  text-align:center;color:var(--muted);font-size:.85rem;
+  padding:2.5rem 1rem;line-height:1.7;
+  border:1px dashed var(--border);border-radius:var(--r);
+}
+
 /* ── MAIN ── */
 main{padding:.9rem 1rem 4rem;}
 .results-note{
@@ -370,12 +413,19 @@ main{padding:.9rem 1rem 4rem;}
     <select class="sort-sel" id="sort-sel">
       <option value="score">Best Match</option>
       <option value="commute">Shortest Commute</option>
+      <option value="dist">Nearest to Munich</option>
       <option value="cost">Cheapest First</option>
       <option value="alps">Best Alps Access</option>
       <option value="lakes">Best Lakes</option>
       <option value="name">A–Z</option>
     </select>
   </div>
+
+  <div class="dir-head">
+    <span>🧭 Direction from Munich</span>
+    <button class="dir-clear" id="dir-clear">Clear</button>
+  </div>
+  <div class="filter-bar dir-bar" id="dir-bar"></div>
 </div>
 
 <!-- ═══ MAIN ═══ -->
@@ -425,6 +475,21 @@ const CRITERIA = [
   {key:'rail',       emoji:'🛤️', label:'Rail Network'},
 ];
 
+/* Compass sectors — bearings measured from Munich Hauptbahnhof (48.137 N, 11.575 E),
+   each location snapped to the nearest 45° sector. `km` is straight-line distance. */
+const DIRS = [
+  {key:'C',  arrow:'◎', label:'Munich', full:'Munich city'},
+  {key:'N',  arrow:'↑', label:'N',      full:'North'},
+  {key:'NE', arrow:'↗', label:'NE',     full:'North-east'},
+  {key:'E',  arrow:'→', label:'E',      full:'East'},
+  {key:'SE', arrow:'↘', label:'SE',     full:'South-east'},
+  {key:'S',  arrow:'↓', label:'S',      full:'South'},
+  {key:'SW', arrow:'↙', label:'SW',     full:'South-west'},
+  {key:'W',  arrow:'←', label:'W',      full:'West'},
+  {key:'NW', arrow:'↖', label:'NW',     full:'North-west'},
+];
+const DIR_MAP = Object.fromEntries(DIRS.map(d => [d.key, d]));
+
 // weights: 0-5 scale
 let W = {commute:5, medDev:5, dog:4, housing:4, cost:4, alps:3, lakes:3, expat:3, rail:3};
 
@@ -432,12 +497,13 @@ let filter = 'all';
 let sortBy  = 'score';
 let favs    = JSON.parse(localStorage.getItem('rd-favs')  || '[]');
 let notes   = JSON.parse(localStorage.getItem('rd-notes') || '{}');
+let dirSel  = new Set(JSON.parse(localStorage.getItem('rd-dirs') || '[]'));
 let activeLoc = null;
 
 const LOCS = [
   {
     id:'munich', name:'Munich', nameDe:'München', country:'DE', flag:'🇩🇪',
-    region:'Bavaria, Germany', pop:'1.5 million', commuteMin:0,
+    region:'Bavaria, Germany', dir:'C', km:0, pop:'1.5 million', commuteMin:0,
     commuteText:'Office is here!', cost:'€3,200–4,800/mo',
     sc:{commute:10, medDev:10, dog:7, housing:3, cost:2, alps:5, lakes:7, expat:10, rail:10},
     highlight:'Zero commute — the ADI office is right here. Munich has the largest concentration of medical device companies in Germany. The trade-off is a seriously tough housing market.',
@@ -463,7 +529,7 @@ const LOCS = [
   },
   {
     id:'augsburg', name:'Augsburg', nameDe:'Augsburg', country:'DE', flag:'🇩🇪',
-    region:'Bavaria, Germany', pop:'300,000', commuteMin:35,
+    region:'Bavaria, Germany', dir:'NW', km:57, pop:'300,000', commuteMin:35,
     commuteText:'~35 min to Munich', cost:'€1,900–2,800/mo',
     sc:{commute:9, medDev:7, dog:7, housing:7, cost:7, alps:4, lakes:5, expat:7, rail:8},
     highlight:'Affordable city life, 35 minutes from ADI by train. Bavaria\'s third-largest city with real character, much lower costs, and a liveable rental market.',
@@ -484,7 +550,7 @@ const LOCS = [
   },
   {
     id:'starnberg', name:'Starnberg', nameDe:'Starnberg', country:'DE', flag:'🇩🇪',
-    region:'Bavaria, Germany — Lake District', pop:'23,000', commuteMin:28,
+    region:'Bavaria, Germany — Lake District', dir:'SW', km:23, pop:'23,000', commuteMin:28,
     commuteText:'~28 min to Munich (S6)', cost:'€2,400–3,800/mo',
     sc:{commute:9, medDev:6, dog:8, housing:5, cost:4, alps:6, lakes:10, expat:8, rail:8},
     highlight:'Living directly on the stunning Starnberger See with a 28-minute S-Bahn into the ADI office. Premium lifestyle in Bavaria\'s lake district — pricey, but spectacular.',
@@ -503,7 +569,7 @@ const LOCS = [
   },
   {
     id:'freising', name:'Freising', nameDe:'Freising', country:'DE', flag:'🇩🇪',
-    region:'Bavaria, Germany', pop:'50,000', commuteMin:38,
+    region:'Bavaria, Germany', dir:'NE', km:32, pop:'50,000', commuteMin:38,
     commuteText:'~38 min to Munich (S1)', cost:'€1,700–2,500/mo',
     sc:{commute:9, medDev:7, dog:7, housing:7, cost:6, alps:3, lakes:4, expat:7, rail:8},
     highlight:'Charming historic town 38 minutes from ADI by S-Bahn, and 10 minutes from Munich Airport — brilliant for trips home to Ireland. Better value than Munich with a real community feel.',
@@ -525,7 +591,7 @@ const LOCS = [
   },
   {
     id:'rosenheim', name:'Rosenheim', nameDe:'Rosenheim', country:'DE', flag:'🇩🇪',
-    region:'Bavaria, Germany — Upper Bavaria', pop:'64,000', commuteMin:50,
+    region:'Bavaria, Germany — Upper Bavaria', dir:'SE', km:52, pop:'64,000', commuteMin:50,
     commuteText:'~50 min to Munich', cost:'€1,600–2,400/mo',
     sc:{commute:8, medDev:6, dog:9, housing:7, cost:6, alps:8, lakes:7, expat:6, rail:8},
     highlight:'Gateway to the Alps and Bavaria\'s lake country. Solid 50-minute commute, outdoorsy culture, and genuinely affordable — with the Inn river and Chiemsee on your doorstep.',
@@ -546,7 +612,7 @@ const LOCS = [
   },
   {
     id:'prien', name:'Prien am Chiemsee', nameDe:'Prien am Chiemsee', country:'DE', flag:'🇩🇪',
-    region:'Bavaria, Germany — Chiemsee', pop:'11,000', commuteMin:60,
+    region:'Bavaria, Germany — Chiemsee', dir:'SE', km:65, pop:'11,000', commuteMin:60,
     commuteText:'~60 min to Munich', cost:'€1,400–2,100/mo',
     sc:{commute:8, medDev:5, dog:9, housing:8, cost:7, alps:7, lakes:10, expat:6, rail:7},
     highlight:'Directly on Bavaria\'s biggest lake with Alpine views. Small-town paradise for dogs and outdoor life. The 60-minute train commute is very liveable for 3 days a week.',
@@ -567,7 +633,7 @@ const LOCS = [
   },
   {
     id:'weilheim', name:'Weilheim i. OB', nameDe:'Weilheim in Oberbayern', country:'DE', flag:'🇩🇪',
-    region:'Bavaria, Germany — Pfaffenwinkel', pop:'24,000', commuteMin:60,
+    region:'Bavaria, Germany — Pfaffenwinkel', dir:'SW', km:46, pop:'24,000', commuteMin:60,
     commuteText:'~60 min to Munich', cost:'€1,300–1,900/mo',
     sc:{commute:7, medDev:5, dog:9, housing:9, cost:7, alps:7, lakes:9, expat:5, rail:7},
     highlight:'Sweet spot between three stunning lakes and the Alps. Affordable, genuinely Bavarian, and excellent for the enclosed garden you need. Hidden gem of the region.',
@@ -587,7 +653,7 @@ const LOCS = [
   },
   {
     id:'badtoelz', name:'Bad Tölz', nameDe:'Bad Tölz', country:'DE', flag:'🇩🇪',
-    region:'Bavaria, Germany — Alpine Foothills', pop:'19,000', commuteMin:72,
+    region:'Bavaria, Germany — Alpine Foothills', dir:'S', km:42, pop:'19,000', commuteMin:72,
     commuteText:'~72 min to Munich', cost:'€1,500–2,200/mo',
     sc:{commute:7, medDev:5, dog:10, housing:7, cost:7, alps:9, lakes:8, expat:5, rail:6},
     highlight:'Stunning spa town right at the Alpine foothills. 20 minutes from the gorgeous Tegernsee. The Isar river runs through town — an incredible dog walking environment.',
@@ -608,7 +674,7 @@ const LOCS = [
   },
   {
     id:'garmisch', name:'Garmisch-Partenkirchen', nameDe:'Garmisch-Partenkirchen', country:'DE', flag:'🇩🇪',
-    region:'Bavaria, Germany — Zugspitze', pop:'26,000', commuteMin:88,
+    region:'Bavaria, Germany — Zugspitze', dir:'SW', km:80, pop:'26,000', commuteMin:88,
     commuteText:'~88 min to Munich', cost:'€1,700–2,600/mo',
     sc:{commute:6, medDev:3, dog:10, housing:6, cost:5, alps:10, lakes:8, expat:7, rail:7},
     highlight:'Germany\'s most famous mountain resort — the Zugspitze on your doorstep. International ski town. The commute is a stretch but for the Alps access it might just be worth it.',
@@ -629,7 +695,7 @@ const LOCS = [
   },
   {
     id:'murnau', name:'Murnau am Staffelsee', nameDe:'Murnau am Staffelsee', country:'DE', flag:'🇩🇪',
-    region:'Bavaria, Germany — Alpine Foothills', pop:'12,000', commuteMin:80,
+    region:'Bavaria, Germany — Alpine Foothills', dir:'SW', km:58, pop:'12,000', commuteMin:80,
     commuteText:'~80 min to Munich', cost:'€1,200–1,900/mo',
     sc:{commute:6, medDev:4, dog:9, housing:9, cost:8, alps:9, lakes:10, expat:5, rail:6},
     highlight:'On the beautiful Staffelsee with the Alps as a backdrop. Famously artistic and peaceful. Excellent housing options with gardens. A hidden gem that punches above its weight.',
@@ -650,7 +716,7 @@ const LOCS = [
   },
   {
     id:'kufstein', name:'Kufstein', nameDe:'Kufstein', country:'AT', flag:'🇦🇹',
-    region:'Tyrol, Austria — Inn Valley', pop:'20,000', commuteMin:58,
+    region:'Tyrol, Austria — Inn Valley', dir:'SE', km:76, pop:'20,000', commuteMin:58,
     commuteText:'~58 min to Munich (Railjet)', cost:'€1,400–2,100/mo',
     sc:{commute:8, medDev:5, dog:9, housing:8, cost:7, alps:9, lakes:7, expat:6, rail:8},
     highlight:'Dramatic fortress town in the Austrian Tyrol, 58 minutes from ADI by direct Railjet. Right in the Alps, great rail link, and positioned between Munich and Innsbruck job markets.',
@@ -674,7 +740,7 @@ const LOCS = [
   },
   {
     id:'salzburg', name:'Salzburg', nameDe:'Salzburg', country:'AT', flag:'🇦🇹',
-    region:'Salzburg, Austria', pop:'155,000', commuteMin:95,
+    region:'Salzburg, Austria', dir:'E', km:116, pop:'155,000', commuteMin:95,
     commuteText:'~95 min to Munich', cost:'€1,700–2,800/mo',
     sc:{commute:6, medDev:7, dog:8, housing:6, cost:6, alps:9, lakes:9, expat:9, rail:8},
     highlight:'One of Europe\'s most beautiful cities, surrounded by Alpine lakes and mountains. Growing life sciences scene, highly international — and Munich is reachable in 95 minutes direct.',
@@ -697,7 +763,7 @@ const LOCS = [
   },
   {
     id:'innsbruck', name:'Innsbruck', nameDe:'Innsbruck', country:'AT', flag:'🇦🇹',
-    region:'Tyrol, Austria', pop:'132,000', commuteMin:110,
+    region:'Tyrol, Austria', dir:'S', km:98, pop:'132,000', commuteMin:110,
     commuteText:'~110 min to Munich', cost:'€1,600–2,600/mo',
     sc:{commute:5, medDev:7, dog:9, housing:6, cost:6, alps:10, lakes:7, expat:8, rail:8},
     highlight:'The ultimate Alpine city — surrounded by 2,000m peaks on all sides. World-class university with a Medical University. Ski-in ski-out lifestyle. The commute is the longest but the setting is extraordinary.',
@@ -721,7 +787,7 @@ const LOCS = [
   },
   {
     id:'landsberg', name:'Landsberg am Lech', nameDe:'Landsberg am Lech', country:'DE', flag:'🇩🇪',
-    region:'Bavaria, Germany — Lechrain', pop:'31,000', commuteMin:72,
+    region:'Bavaria, Germany — Lechrain', dir:'W', km:53, pop:'31,000', commuteMin:72,
     commuteText:'~72 min to Munich', cost:'€1,300–2,000/mo',
     sc:{commute:7, medDev:5, dog:8, housing:8, cost:8, alps:5, lakes:7, expat:5, rail:6},
     highlight:'Beautiful medieval walled town on the Lech river. Affordable, charming, and positioned between Munich and Augsburg. The Ammersee is 30 minutes away.',
@@ -739,6 +805,372 @@ const LOCS = [
     lakes:'Ammersee (30 min), Wesslinger See (25 min), Starnberger See (50 min)',
     alpsNote:'Allgäu Alps visible on clear days; Füssen/Neuschwanstein 1 hour',
     mapUrl:'https://maps.google.com/?q=Landsberg+am+Lech,Germany',
+  },
+
+  /* ───────── NORTH ───────── */
+  {
+    id:'ingolstadt', name:'Ingolstadt', nameDe:'Ingolstadt', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Danube', dir:'N', km:71, pop:'143,000', commuteMin:45,
+    commuteText:'~45 min to Munich', cost:'€1,600–2,400/mo',
+    sc:{commute:8, medDev:6, dog:7, housing:7, cost:7, alps:2, lakes:4, expat:7, rail:8},
+    highlight:'A proper city on the Danube, 45 minutes north of ADI. Audi money means high wages, an international workforce, and a big modern hospital — but the Alps are a long way away.',
+    companies:[
+      {name:'Klinikum Ingolstadt', what:'Large regional hospital (~1,200 beds, ~3,500 staff) with its own institute for hygiene and clinical microbiology, central sterilisation department (AEMP), and medical device management. One of the more substantial hospital-side employers north of Munich.'},
+      {name:'Technische Hochschule Ingolstadt (THI)', what:'University of applied sciences with a growing biomedical and healthcare engineering research strand. Lab, research-support, and quality roles appear here periodically.'},
+      {name:'Audi AG', what:'Not medtech, but worth knowing: Audi\'s global HQ is here with ~44,000 staff. It underpins the local expat community, English-speaking services, and international schools — which makes settling in much easier than the town size suggests.'},
+      {name:'Full Munich medtech cluster (45 min)', what:'Frequent RE and ICE trains reach Munich in 45 min, opening Brainlab, Siemens Healthineers, GE HealthCare, Medtronic and the rest of the cluster. Very workable for 3 days/week.'},
+    ],
+    jobNotes:'Ingolstadt gives your partner a real local hospital option in the Klinikum plus an easy 45-minute run into the whole Munich cluster. It also sits on the corridor toward Nuremberg/Erlangen, where Siemens Healthineers has its global headquarters — a third market worth watching.',
+    dogNotes:'Better than you would expect from an industrial city. The Donauauen — the Danube floodplain forests — wrap around the city and give kilometres of quiet, shaded, off-lead walking right from the edge of town. Good choice of vets and services for a city of 143K.',
+    housingNotes:'Audi salaries push prices above the regional average, but you get far more for your money than Munich. A 3BR with garden runs roughly €1,200–1,700/month. Decent stock and much calmer competition. The Friedrichshofen and Etting districts have more houses and gardens.',
+    transportNotes:'RE and ICE services to Munich HBF, 45 min, several per hour. Also 1 h to Nuremberg and 20 min to Pfaffenhofen. Munich Airport is about 1 h by car. Deutschlandticket covers the regional trains.',
+    pros:['45 min to ADI Munich with frequent trains','Real local hospital employer (Klinikum Ingolstadt)','International workforce thanks to Audi','Danube floodplain forests for dog walking','Good value housing with gardens','Also on the Nuremberg/Erlangen medtech corridor'],
+    cons:['Alps 2+ hours away — the weakest Alpine access on this list','No real lakes nearby','Industrial, car-centric city feel','Flat landscape'],
+    lakes:'Baggersee Ingolstadt (10 min), Altmühltal lakes (30 min), Ammersee (1 h 15)',
+    alpsNote:'Alps 2+ hours south by car — realistically a weekend trip, not an evening one',
+    mapUrl:'https://maps.google.com/?q=Ingolstadt,Germany',
+  },
+  {
+    id:'pfaffenhofen', name:'Pfaffenhofen a.d. Ilm', nameDe:'Pfaffenhofen an der Ilm', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Hallertau', dir:'N', km:44, pop:'26,000', commuteMin:35,
+    commuteText:'~35 min to Munich', cost:'€1,300–1,900/mo',
+    sc:{commute:9, medDev:4, dog:8, housing:8, cost:8, alps:2, lakes:3, expat:4, rail:7},
+    highlight:'Quietly one of the best value-for-commute trades in the whole zone: 35 minutes to ADI from a small market town in the Hallertau hop country, at roughly half Munich\'s rent.',
+    companies:[
+      {name:'Ilmtalklinik Pfaffenhofen', what:'Small district hospital with basic microbiology, infection control, and instrument sterilisation functions. Local and convenient, but limited in scope — more of a fallback than a career target.'},
+      {name:'Klinikum Ingolstadt (20 min)', what:'The substantial hospital option for this area — institute for hygiene and clinical microbiology, central sterilisation, device management. 20 minutes north by train.'},
+      {name:'Full Munich medtech cluster (35 min)', what:'Regional trains reach Munich HBF in ~35 min, putting Brainlab, Siemens Healthineers, GE HealthCare, Medtronic and the full cluster comfortably in range for 3 days/week.'},
+    ],
+    jobNotes:'There is very little medtech in Pfaffenhofen itself. What makes it work is the position: 35 min to Munich\'s entire cluster and 20 min to the Klinikum Ingolstadt, so your partner has two directions to search without a punishing journey either way.',
+    dogNotes:'Excellent, in an understated way. The Ilm river path, the Gerolsbach valley, and endless hop fields and farm tracks mean quiet, low-traffic walking with almost no crowds — genuinely calm surroundings for a dog that finds busy places hard. Vets locally; specialists in Ingolstadt or Munich.',
+    housingNotes:'One of the strongest options for your enclosed-garden requirement given how short the commute is. A 3BR house with garden is realistic at €950–1,400/month, with modest competition. Both flats and houses come up regularly — you would have time to think rather than deciding in an afternoon.',
+    transportNotes:'On the Munich–Ingolstadt–Nuremberg line, roughly two trains an hour, ~35 min to Munich HBF. Car useful for daily life in a small town. Munich Airport about 50 min by car.',
+    pros:['35 min to ADI Munich — exceptional for the price','Houses with enclosed gardens genuinely affordable','Very calm, low-stimulation setting for a sensitive dog','Hop-country landscape, quiet farm tracks and river paths','Ingolstadt hospital 20 min for local job options','Low competition on rentals'],
+    cons:['Alps 2+ hours — poor Alpine access','No lakes worth the name nearby','Small town, almost no expat community','Little English spoken','Car needed for daily life'],
+    lakes:'Ilm river; Baggersee Ingolstadt (25 min); Ammersee (1 h)',
+    alpsNote:'Alps 2+ hours south — this is hop country, not mountain country',
+    mapUrl:'https://maps.google.com/?q=Pfaffenhofen+an+der+Ilm,Germany',
+  },
+  {
+    id:'regensburg', name:'Regensburg', nameDe:'Regensburg', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Danube', dir:'N', km:105, pop:'156,000', commuteMin:85,
+    commuteText:'~85 min to Munich', cost:'€1,500–2,300/mo',
+    sc:{commute:6, medDev:8, dog:8, housing:6, cost:7, alps:2, lakes:4, expat:8, rail:8},
+    highlight:'A UNESCO World Heritage medieval city with a big university, a university hospital, and a genuine biomedical engineering scene — the strongest job market north of Munich.',
+    companies:[
+      {name:'University Hospital Regensburg (UKR)', what:'Large university hospital (~1,000 beds, ~5,000 staff). Includes the Institute of Clinical Microbiology and Hygiene, central sterilisation supply, infection control, and clinical device management — a direct match for a QA microbiologist and one of the best hospital-side options on this list.'},
+      {name:'Regensburg Center of Biomedical Engineering (RCBE)', what:'Joint research centre of OTH Regensburg and the University of Regensburg covering medical device development, sensor technology, and biofabrication. Research-adjacent quality and validation roles.'},
+      {name:'Krones AG (Neutraubling, 15 min)', what:'Global leader in bottling and packaging technology for the beverage and pharmaceutical industries, ~18,000 employees. Hygienic design, sterile filling systems, cleaning validation and quality engineering — an unusual but genuinely strong fit for sterility and hygiene expertise.'},
+      {name:'Full Munich medtech cluster (85 min)', what:'ICE/RE services reach Munich in ~85 min. Feasible for 3 days/week but no one\'s favourite journey — most people here work locally.'},
+    ],
+    jobNotes:'Regensburg is one of the few places on this list where your partner could plausibly build a career without Munich at all: the UKR for hospital microbiology and sterilisation QA, RCBE for the research side, and Krones for regulated manufacturing quality. The trade-off is that the 85-minute commute to ADI makes this a real decision rather than a free option.',
+    dogNotes:'Very good. The Danube and Regen riverbanks, the Dörnbergpark, and the wooded hills just north of the city give varied walking. A university city of 156K supports specialist vets, behaviour-focused trainers, and groomers — easier to find cooperative-care services here than in the small towns.',
+    housingNotes:'Student demand keeps the market tight in the centre, but the outer districts are reasonable. A 3BR with garden runs roughly €1,200–1,700/month in Kumpfmühl, Burgweinting, or Königswiesen. Better value than Munich, more competitive than the small towns.',
+    transportNotes:'Direct ICE and RE trains to Munich, ~85 min, roughly hourly. Also 1 h to Nuremberg and 1 h 15 to Passau. Good local bus network; the old town is walkable. Munich Airport ~1 h 15 by car.',
+    pros:['Best local medtech/hospital market north of Munich','UNESCO medieval old town — beautiful daily life','Big university city, very international, English common','Danube riverside walking for the dog','Cheaper and calmer than Munich','Also connected to the Nuremberg/Erlangen corridor'],
+    cons:['85 min each way to ADI — a real commitment 3x/week','Alps 2.5 hours away','Student demand keeps central rents high','Northern Bavaria — no lakes or mountains nearby'],
+    lakes:'Danube and Regen rivers; Guggenberger See (15 min); Steinberger See (35 min)',
+    alpsNote:'Alps ~2.5 hours south — the furthest from the mountains of any location here',
+    mapUrl:'https://maps.google.com/?q=Regensburg,Germany',
+  },
+
+  /* ───────── NORTH-EAST ───────── */
+  {
+    id:'landshut', name:'Landshut', nameDe:'Landshut', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Lower Bavaria', dir:'NE', km:62, pop:'74,000', commuteMin:45,
+    commuteText:'~45 min to Munich', cost:'€1,500–2,200/mo',
+    sc:{commute:8, medDev:6, dog:8, housing:7, cost:7, alps:3, lakes:4, expat:6, rail:8},
+    highlight:'A strikingly beautiful Gothic city on the Isar with Trausnitz Castle above it — 45 minutes direct to ADI, and far cheaper and calmer than anything the same distance south.',
+    companies:[
+      {name:'Klinikum Landshut & LAKUMED Kliniken', what:'Two hospital groups serve the district — the municipal Klinikum Landshut and the LAKUMED group (Achdorf, Vilsbiburg, Landshut). Between them: hygiene and infection control, central sterilisation, and device management roles. A solid local base for hospital-side QA.'},
+      {name:'BMW Group Plant Landshut', what:'Not medtech, but a 4,000-strong plant specialising in lightweight components and e-drives. Relevant mainly because it sustains an engineering job market, an international community, and good local infrastructure.'},
+      {name:'Full Munich medtech cluster (45 min)', what:'Direct RE trains reach Munich HBF in ~45 min, several per hour, opening Brainlab, Siemens Healthineers, GE HealthCare, Medtronic and the whole cluster.'},
+      {name:'Munich Airport corridor (25 min)', what:'The airport region between Landshut and Freising hosts logistics, aviation-services and pharma-distribution employers — worth scanning for quality and GDP-compliance roles.'},
+    ],
+    jobNotes:'Landshut offers a genuine two-hospital local market plus a comfortable 45-minute direct run into Munich. It is one of the better balances on this list between a real local option and full access to the Munich cluster.',
+    dogNotes:'Very good. The Isar flows straight through the city with long green riverside paths on both banks, and the Hofberg woods rise behind the old town. Relaxed, unhurried city where dogs are ordinary. Good vet coverage for a city of this size.',
+    housingNotes:'Notably better value than equivalent distances south of Munich. A 3BR house with garden is realistic at €1,100–1,600/month, and ground-floor flats with gardens come up regularly. Competition is moderate rather than frantic — you would have room to negotiate.',
+    transportNotes:'Direct RE trains to Munich HBF ~45 min, two to three per hour. Munich Airport is 25 min by car or bus — very convenient for Ireland trips. Local buses within the city; the old town is walkable. Deutschlandticket covers it all.',
+    pros:['45 min direct to ADI Munich, frequent service','One of Germany\'s most beautiful Gothic old towns','Two local hospital groups for job options','25 min to Munich Airport for flights home','Isar riverside walking on the doorstep','Much better housing value than the south'],
+    cons:['Alps 1.5–2 hours away','No lakes nearby','Lower Bavaria is traditional — less English','Smaller expat scene than Munich or Regensburg'],
+    lakes:'Isar river; Ismaninger Speichersee (30 min); Ammersee (1 h 10)',
+    alpsNote:'Alps 1.5–2 hours south by car; nothing visible from town',
+    mapUrl:'https://maps.google.com/?q=Landshut,Germany',
+  },
+  {
+    id:'erding', name:'Erding', nameDe:'Erding', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Munich Belt', dir:'NE', km:31, pop:'37,000', commuteMin:45,
+    commuteText:'~45 min to Munich (S2)', cost:'€1,600–2,300/mo',
+    sc:{commute:8, medDev:6, dog:8, housing:7, cost:6, alps:3, lakes:5, expat:6, rail:7},
+    highlight:'A pretty brick-Gothic market town inside the S-Bahn network, 15 minutes from Munich Airport. Small-town rents and space, with the whole Munich job market on one train.',
+    companies:[
+      {name:'Klinikum Landkreis Erding', what:'District hospital serving the area, with infection control, instrument sterilisation, and device management functions. Modest in scale but genuinely local — no commute at all.'},
+      {name:'Munich Airport employers (15 min)', what:'The airport is a town-sized employer in its own right, including pharmaceutical logistics and cold-chain handling where GDP compliance and quality roles exist. An unusual but real option for a quality background.'},
+      {name:'Full Munich medtech cluster (45 min via S2)', what:'The S2 runs direct into the city centre, giving access to Brainlab, Siemens Healthineers, GE HealthCare, Medtronic and the rest. Slower than the distance suggests, but frequent and reliable.'},
+      {name:'Freising / Weihenstephan life sciences (25 min)', what:'The TU Munich life-sciences campus is a short hop west, adding biotech and food-science lab roles to the search.'},
+    ],
+    jobNotes:'Erding\'s own hospital is a real if modest local option, and the S2 keeps the entire Munich cluster available. Note that the S-Bahn takes 45 min despite Erding being only 31 km out — the line is slow, so check the journey from your actual target neighbourhood before committing.',
+    dogNotes:'Very good. The Sempt river meadows, the Erdinger Moos, and large areas of open farmland give quiet off-lead walking within minutes of the town. Flat and easy going — kind on older or anxious dogs. Vets locally, specialists 30 min away in Munich.',
+    housingNotes:'More affordable than the southern S-Bahn towns of the same distance, largely because Erding is not on the lakes. A 3BR with garden runs roughly €1,200–1,700/month. Reasonable availability and much less competition than Starnberg or Wolfratshausen.',
+    transportNotes:'S2 direct to Munich Marienplatz/HBF, ~45 min, every 20 minutes. Munich Airport is 15 min by car or bus — outstanding for trips home to Ireland. Car useful, though not strictly essential.',
+    pros:['Inside the S-Bahn network — no ticket complications','15 min to Munich Airport for Ireland flights','Cheaper than the southern S-Bahn towns','Local district hospital for job options','Therme Erding and a lively small-town centre','Quiet flat countryside for easy dog walks'],
+    cons:['S2 is slow — 45 min for only 31 km','Alps 1.5–2 hours south','Flat, unremarkable landscape','No significant lakes nearby'],
+    lakes:'Sempt river; Kronthaler Weiher (5 min); Ismaninger Speichersee (20 min)',
+    alpsNote:'Alps 1.5–2 hours south by car; not visible from town',
+    mapUrl:'https://maps.google.com/?q=Erding,Germany',
+  },
+
+  /* ───────── EAST ───────── */
+  {
+    id:'ebersberg', name:'Ebersberg', nameDe:'Ebersberg', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Ebersberger Forst', dir:'E', km:30, pop:'12,000', commuteMin:35,
+    commuteText:'~35 min to Munich (S4)', cost:'€1,500–2,200/mo',
+    sc:{commute:9, medDev:5, dog:10, housing:7, cost:6, alps:5, lakes:5, expat:5, rail:8},
+    highlight:'A small town wrapped around one of Germany\'s largest continuous forests, 35 minutes from ADI on the S4. If the dog is the deciding factor, this is very hard to beat.',
+    companies:[
+      {name:'Kreisklinik Ebersberg', what:'District hospital right in town with infection control, sterilisation, and device management functions. Small, but the commute is a ten-minute walk.'},
+      {name:'Klinikum Rosenheim (35 min)', what:'The larger regional hospital to the south-east, with in-house microbiology and sterility testing. A more substantial hospital-side target within easy reach.'},
+      {name:'Full Munich medtech cluster (35 min via S4)', what:'The S4 runs direct to Munich city centre, opening Brainlab, Siemens Healthineers, GE HealthCare, Medtronic and the full cluster. Also puts Munich\'s eastern industrial belt within 20 min.'},
+    ],
+    jobNotes:'Local medtech is thin — the Kreisklinik is the only employer in town. The case for Ebersberg is the 35-minute S-Bahn into the whole Munich market combined with a quality of life that the equivalent southern towns charge a lot more for.',
+    dogNotes:'Outstanding — arguably the best pure dog environment in the commuter belt. The Ebersberger Forst covers roughly 90 km² of continuous woodland starting at the edge of town, with hundreds of kilometres of quiet forest tracks. Almost no crowds, deep shade in summer, and endless variety of route. For a dog that finds busy places difficult, this is close to ideal.',
+    housingNotes:'Good value for an S-Bahn town, mostly because Ebersberg lacks a lake. A 3BR house with enclosed garden is realistic at €1,200–1,700/month. Stock is limited by the town\'s size, so listings need watching, but competition is far gentler than on the S6 or S7 lines.',
+    transportNotes:'S4 direct to Munich Marienplatz/HBF, ~35 min, every 20 minutes. Also on the Grafing junction for regional trains toward Rosenheim and Salzburg. Car useful but not essential.',
+    pros:['Ebersberger Forst — ~90 km² of forest from the doorstep','35 min direct S4 to ADI Munich','Best-value dog environment inside the S-Bahn zone','Local hospital within walking distance','Quiet and low-stimulation, but not isolated','Rosenheim and the Alps easily reachable'],
+    cons:['Very small town — limited shops and services','No lake nearby','Little English spoken','Alps ~1 hour, not on the doorstep'],
+    lakes:'Steinsee (15 min), Chiemsee (45 min), Starnberger See (50 min)',
+    alpsNote:'Alps ~1 hour south by car; Wendelstein visible from the higher ground',
+    mapUrl:'https://maps.google.com/?q=Ebersberg,Bavaria,Germany',
+  },
+  {
+    id:'wasserburg', name:'Wasserburg am Inn', nameDe:'Wasserburg am Inn', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Inn Valley', dir:'E', km:49, pop:'13,000', commuteMin:70,
+    commuteText:'~70 min to Munich', cost:'€1,300–1,900/mo',
+    sc:{commute:6, medDev:5, dog:9, housing:8, cost:7, alps:6, lakes:6, expat:4, rail:5},
+    highlight:'A medieval town sitting inside a hairpin loop of the river Inn — one of the most striking places in Bavaria, and one of the cheapest. The rail link is the catch.',
+    companies:[
+      {name:'kbo-Inn-Salzach-Klinikum', what:'Large specialist psychiatric and neurological hospital group based in Wasserburg with well over 1,000 staff — the biggest employer in town. In-house hygiene, infection control, and instrument reprocessing functions.'},
+      {name:'RoMed Klinik Wasserburg', what:'District general hospital in the RoMed group. Infection control, sterilisation, and device management on a smaller scale, but directly local.'},
+      {name:'Klinikum Rosenheim (30 min)', what:'The regional hospital with in-house microbiology and sterility testing — the more substantial hospital-side employer for this area.'},
+      {name:'Full Munich medtech cluster (70 min)', what:'Reachable via Grafing with a change, ~70 min door to door. Workable for 3 days/week but the least convenient part of living here.'},
+    ],
+    jobNotes:'Unusually for a town this size, Wasserburg has two hospitals including the large kbo psychiatric clinic — so local employment is more real here than in most small towns on this list. Munich remains available at 70 min, and Rosenheim at 30 min is the practical middle option.',
+    dogNotes:'Excellent. The Inn loop gives riverside walking on three sides of the town, with wooded bluffs above and open countryside beyond. Quiet, uncrowded, and varied. Vets in town; specialist services in Rosenheim, 30 min away.',
+    housingNotes:'Among the most affordable in the whole zone. A 3BR house with enclosed garden is realistic at €950–1,400/month, and there is genuine choice rather than a scramble. The trade-off for that price is the commute — this is what 70 minutes buys you.',
+    transportNotes:'Here is the honest catch: the station is at Reitmehring, about 4 km outside the old town, and trains to Munich require a change at Grafing (~70 min total). A car is effectively essential. If rail commuting is the priority, Ebersberg or Rosenheim serve you better.',
+    pros:['Spectacular medieval town inside an Inn river loop','Among the cheapest housing in the zone','Two local hospitals — real employment for a small town','Rosenheim 30 min, Alps ~50 min','Excellent quiet riverside dog walking','Real choice on the rental market'],
+    cons:['Station is 4 km outside town — car essential','70 min to Munich with a change at Grafing','Very small, almost no expat community','Little English spoken'],
+    lakes:'Inn river; Simssee (30 min), Chiemsee (40 min), Seeoner Seen (25 min)',
+    alpsNote:'Alps ~50 min south by car; Wendelstein and the Chiemgau range visible on clear days',
+    mapUrl:'https://maps.google.com/?q=Wasserburg+am+Inn,Germany',
+  },
+  {
+    id:'traunstein', name:'Traunstein', nameDe:'Traunstein', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Chiemgau', dir:'E', km:85, pop:'21,000', commuteMin:65,
+    commuteText:'~65 min to Munich', cost:'€1,400–2,000/mo',
+    sc:{commute:7, medDev:6, dog:9, housing:7, cost:7, alps:8, lakes:8, expat:5, rail:7},
+    highlight:'The heart of the Chiemgau, halfway between Munich and Salzburg — with a big regional hospital in town, the Alps behind it, and the Chiemsee twenty minutes west.',
+    companies:[
+      {name:'Klinikum Traunstein (Kliniken Südostbayern)', what:'The largest hospital in south-east Bavaria outside Munich and Rosenheim (~600 beds, academic teaching hospital of LMU Munich). Has in-house hygiene and infection control, a central sterilisation department, and clinical device management. A genuinely substantial local employer for microbiology and sterilisation QA.'},
+      {name:'Salzburg cluster — SALK & PMU (35 min)', what:'Salzburg University Hospital and Paracelsus Medical University are only 35 min east by train, adding a second full hospital and research market without moving country.'},
+      {name:'Klinikum Rosenheim (35 min)', what:'The other major regional hospital, 35 min west, with in-house microbiology and sterility testing.'},
+      {name:'Full Munich medtech cluster (65 min)', what:'Direct trains on the Munich–Salzburg mainline reach Munich in ~65 min, opening Brainlab, Siemens Healthineers, Medtronic and the full cluster.'},
+    ],
+    jobNotes:'Traunstein is one of the strongest job positions on this list for its size: a major hospital in the town itself, Rosenheim 35 min west, Salzburg 35 min east, and Munich 65 min. Your partner would have four distinct markets in reach without any single journey being unreasonable.',
+    dogNotes:'Excellent. The Traun river gorge, the surrounding Chiemgau hills, and forest tracks in every direction give varied walking with real quiet. Deeply outdoor Alpine culture — dogs are simply part of life. Vets in town, specialists in Rosenheim or Salzburg.',
+    housingNotes:'Reasonable for what you get. A 3BR house with garden runs roughly €1,100–1,600/month, with fair availability. Cheaper than the Tegernsee or Starnberg areas for a comparable Alpine setting — the Chiemgau is less fashionable and prices reflect that.',
+    transportNotes:'On the Munich–Salzburg mainline with direct trains to Munich in ~65 min and Salzburg in ~35 min, roughly hourly. Car recommended for the mountains and lakes. Salzburg Airport is 40 min by car — useful for seasonal Dublin flights.',
+    pros:['Major regional hospital in the town itself','Four job markets in reach: local, Rosenheim, Salzburg, Munich','Chiemsee 20 min, Alps immediately south','Salzburg 35 min for culture and a second airport','Good value for an Alpine setting','Outdoor culture — ideal for an active dog'],
+    cons:['65 min to ADI Munich, 3x/week adds up','Small international community','Little English outside the hospital and tourism','Car needed for most things'],
+    lakes:'Chiemsee (20 min), Waginger See (20 min), Tachinger See (20 min), Königssee (45 min)',
+    alpsNote:'Chiemgau Alps immediately south — Hochfelln and Hochgern cable cars 15 min; Berchtesgaden 45 min',
+    mapUrl:'https://maps.google.com/?q=Traunstein,Germany',
+  },
+
+  /* ───────── SOUTH-EAST ───────── */
+  {
+    id:'badaibling', name:'Bad Aibling', nameDe:'Bad Aibling', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Mangfall Valley', dir:'SE', km:44, pop:'19,000', commuteMin:50,
+    commuteText:'~50 min to Munich', cost:'€1,400–2,100/mo',
+    sc:{commute:8, medDev:6, dog:9, housing:8, cost:7, alps:8, lakes:7, expat:5, rail:7},
+    highlight:'A gentle spa town in the Mangfall valley with the Alps on the horizon — 50 minutes to ADI, ten minutes to Rosenheim, and a serious cluster of clinics on the doorstep.',
+    companies:[
+      {name:'Schön Klinik Bad Aibling Harthausen', what:'Major neurological rehabilitation hospital in the Schön Klinik group, one of Germany\'s largest private hospital operators. Infection control, instrument reprocessing, and medical device management roles — an established local employer, not a token one.'},
+      {name:'RoMed Klinik Bad Aibling', what:'District hospital in town, part of the RoMed group. Smaller-scale hygiene, sterilisation, and device functions.'},
+      {name:'Klinikum Rosenheim (10 min)', what:'The regional hospital with in-house microbiology, sterility testing, and infection control — ten minutes away by train. The most realistic substantial local target.'},
+      {name:'Full Munich medtech cluster (50 min)', what:'Direct trains to Munich in ~50 min open Brainlab, Siemens Healthineers, GE HealthCare, Medtronic and the whole cluster.'},
+      {name:'Innsbruck corridor (MED-EL, Sandoz — 70 min)', what:'Heading the other way, the Inn valley leads to MED-EL in Innsbruck and the Sandoz plant at Kundl — both prime QA-microbiology employers.'},
+    ],
+    jobNotes:'Bad Aibling punches well above its population thanks to the clinic cluster: Schön Klinik and RoMed in town, plus Klinikum Rosenheim ten minutes away. Add Munich at 50 min and the Austrian corridor beyond, and the job picture here is genuinely good for a town of 19,000.',
+    dogNotes:'Excellent. Spa-town calm, the Mangfall river, the Aibling moor landscape, and the foothills rising to the south. Unhurried and quiet, with plenty of off-lead space and no crowds — a very low-stress environment. Good vet coverage locally, specialists in Rosenheim.',
+    housingNotes:'Good value with real availability. A 3BR house with enclosed garden is realistic at €1,100–1,600/month. Being a spa town there is a decent rental market, and the competition is mild compared with anywhere on the lakes. Strong option for the enclosed outdoor space you need.',
+    transportNotes:'Direct regional trains to Munich in ~50 min, roughly twice hourly, and 10 min to Rosenheim. Car useful for the mountains. Deutschlandticket covers everything regionally.',
+    pros:['Three clinics in or beside the town — strong local job base','50 min direct to ADI Munich','10 min to Rosenheim, 70 min to the Innsbruck corridor','Alps right behind — Wendelstein 30 min','Calm spa-town pace, ideal for a sensitive dog','Affordable housing with gardens'],
+    cons:['Small international community','Little English spoken locally','Quiet — limited nightlife or culture','Car needed for the mountains'],
+    lakes:'Simssee (15 min), Chiemsee (35 min), Tegernsee (40 min), Schliersee (30 min)',
+    alpsNote:'Alps immediately south — Wendelstein 30 min, Wilder Kaiser about an hour',
+    mapUrl:'https://maps.google.com/?q=Bad+Aibling,Germany',
+  },
+
+  /* ───────── SOUTH ───────── */
+  {
+    id:'holzkirchen', name:'Holzkirchen', nameDe:'Holzkirchen', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Oberland Gateway', dir:'S', km:30, pop:'17,000', commuteMin:25,
+    commuteText:'~25 min to Munich (BOB)', cost:'€1,600–2,300/mo',
+    sc:{commute:9, medDev:6, dog:9, housing:7, cost:6, alps:7, lakes:8, expat:5, rail:8},
+    highlight:'The junction town of the Oberland: 25 minutes to ADI, 20 minutes to the Tegernsee, and the Alps starting just down the road. The best commute-to-mountains ratio on this list.',
+    companies:[
+      {name:'Krankenhaus Agatharied (10 min)', what:'District hospital for the Miesbach region, serving the Tegernsee and Schliersee valleys. Infection control, central sterilisation, and device management functions. Ten minutes away and a realistic local target.'},
+      {name:'Roche Diagnostics — Penzberg (25 min)', what:'One of the largest biotech sites in Europe, ~7,000 employees, producing diagnostic reagents and biopharmaceuticals. QA microbiology, environmental monitoring, sterility assurance and GMP quality systems — arguably the single most relevant employer for your partner\'s exact background on the German side, and reachable from here.'},
+      {name:'Full Munich medtech cluster (25 min)', what:'BOB trains reach Munich HBF in ~25 min, putting Brainlab, Siemens Healthineers, GE HealthCare, Medtronic and the full cluster within an easy daily reach.'},
+    ],
+    jobNotes:'Holzkirchen is quietly one of the best-positioned places here. Munich is 25 minutes, Roche\'s enormous Penzberg site is about 25 minutes the other way, and the Agatharied hospital is ten minutes down the valley. Three genuinely different employers, none of them a long journey.',
+    dogNotes:'Excellent. Moorland, forest, and rolling Oberland countryside straight from the edge of town, with the Tegernsee and Schliersee valleys twenty minutes away for weekends. Quiet, natural, and easy — good for a dog that needs calm without being isolated from services.',
+    housingNotes:'More expensive than the eastern towns because of the commute and the Oberland setting, but far below Tegernsee or Starnberg prices. A 3BR house with garden runs roughly €1,300–1,900/month. Stock is limited by town size, so listings need active monitoring.',
+    transportNotes:'BOB (Bayerische Oberlandbahn) direct to Munich HBF, ~25 min, roughly twice hourly. Also the junction for the Tegernsee and Schliersee/Bayrischzell branches. A8 motorway access for driving south. Deutschlandticket covers the BOB.',
+    pros:['25 min to ADI Munich — best southern commute on the list','Roche Penzberg 25 min — top-tier QA microbiology employer','Tegernsee and Schliersee 20 min away','Alps close without paying lake prices','Local hospital 10 min at Agatharied','Quiet Oberland countryside for the dog'],
+    cons:['Pricier than the eastern towns of the same distance','Small town — limited shops and culture','Limited housing stock, needs watching','Little English spoken'],
+    lakes:'Tegernsee (20 min), Schliersee (25 min), Starnberger See (35 min), Chiemsee (55 min)',
+    alpsNote:'Alps 30 min south — Wendelstein, Brauneck and the Tegernsee peaks all within an hour',
+    mapUrl:'https://maps.google.com/?q=Holzkirchen,Bavaria,Germany',
+  },
+  {
+    id:'gmund', name:'Gmund am Tegernsee', nameDe:'Gmund am Tegernsee', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Tegernsee Valley', dir:'S', km:45, pop:'6,000', commuteMin:60,
+    commuteText:'~60 min to Munich (BOB)', cost:'€1,700–2,600/mo',
+    sc:{commute:7, medDev:4, dog:10, housing:5, cost:4, alps:9, lakes:10, expat:6, rail:6},
+    highlight:'The northern shore of the Tegernsee, where the lake meets the mountains. Probably the most beautiful everyday setting on this list — and priced accordingly.',
+    companies:[
+      {name:'Krankenhaus Agatharied (15 min)', what:'The district hospital for the Tegernsee and Schliersee valleys. Infection control, sterilisation, and device management. The only meaningful local employer for your partner\'s field.'},
+      {name:'Roche Diagnostics — Penzberg (40 min)', what:'Europe\'s major diagnostics and biopharmaceutical manufacturing site, ~7,000 employees. QA microbiology, environmental monitoring, sterility assurance, GMP quality systems. The strongest employer within reach of the valley.'},
+      {name:'Full Munich medtech cluster (60 min)', what:'BOB trains reach Munich HBF in ~60 min via Schaftlach, roughly hourly. Feasible for 3 days/week, though the frequency is lower than the S-Bahn lines.'},
+    ],
+    jobNotes:'This is a lifestyle-first choice and worth being honest about: local medtech is essentially the Agatharied hospital. The realistic career paths are Roche Penzberg at 40 min or Munich at 60 min, and it works best if hybrid working covers the non-office days.',
+    dogNotes:'As good as it gets. Lake shore, Alpine meadows, forest trails, and mountain paths all begin at the door, and the valley culture is thoroughly dog-friendly. The Tegernsee has dog-permitted swimming areas. Quiet outside the summer weekends, when the valley does fill with day-trippers from Munich.',
+    housingNotes:'This is the hardest part. The Tegernsee valley is among the most expensive rural areas in Germany, and much of the housing stock is second homes. A 3BR with garden might be €1,800–2,600/month if you find one — availability is the constraint more than price. Gmund is the most attainable of the valley villages; Tegernsee and Rottach-Egern are worse.',
+    transportNotes:'BOB from Gmund to Munich HBF ~60 min, roughly hourly with a change or a through service depending on the time. Car strongly recommended — the valley is spread out and the bus network is thin. Holzkirchen 15 min for the faster Munich trains.',
+    pros:['Directly on the Tegernsee — exceptional setting','Alps immediately behind — hiking and skiing from the door','Outstanding dog environment year-round','Affluent, well-serviced valley with good vets','Roche Penzberg 40 min','Munich still reachable in an hour'],
+    cons:['Expensive and very limited housing stock','Tiny village (6,000) — few local services','Almost no local medtech employment','Busy with day-trippers on summer weekends','Car essential'],
+    lakes:'Tegernsee (immediate!), Schliersee (25 min), Starnberger See (40 min), Sylvensteinsee (40 min)',
+    alpsNote:'Alps immediately south — Wallberg and Hirschberg above the lake; Brauneck 30 min',
+    mapUrl:'https://maps.google.com/?q=Gmund+am+Tegernsee,Germany',
+  },
+
+  /* ───────── SOUTH-WEST ───────── */
+  {
+    id:'wolfratshausen', name:'Wolfratshausen', nameDe:'Wolfratshausen', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Isar Valley', dir:'SW', km:27, pop:'19,000', commuteMin:40,
+    commuteText:'~40 min to Munich (S7)', cost:'€1,600–2,400/mo',
+    sc:{commute:9, medDev:6, dog:9, housing:6, cost:5, alps:6, lakes:8, expat:6, rail:8},
+    highlight:'Where the Loisach meets the Isar, at the end of the S7 line. Forty minutes to ADI, fifteen to the Starnberger See, and the Alps starting just south — without Starnberg\'s price tag.',
+    companies:[
+      {name:'Roche Diagnostics — Penzberg (20 min)', what:'One of Europe\'s largest biotech and diagnostics sites, ~7,000 employees, manufacturing diagnostic reagents and biopharmaceuticals. QA microbiology, environmental monitoring, sterility testing, and GMP quality systems — an outstanding match for your partner\'s background, and only 20 minutes away.'},
+      {name:'Krankenhaus Wolfratshausen', what:'Local district hospital with infection control, sterilisation, and device management functions. Small scale, but on your doorstep.'},
+      {name:'Full Munich medtech cluster (40 min via S7)', what:'The S7 runs direct into the city centre, opening Brainlab, Siemens Healthineers, GE HealthCare, Medtronic and the rest of the cluster.'},
+      {name:'Martinsried / Planegg biotech cluster (30 min)', what:'Munich\'s biotech hub is on the same side of the city — 30 min via the S7 and a short connection. QA, regulatory, and lab roles across dozens of companies.'},
+    ],
+    jobNotes:'The standout here is Roche Penzberg at 20 minutes — for a QA microbiologist with sterility-testing and environmental-monitoring experience, it is one of the best-matched employers in southern Germany. Add the Martinsried biotech cluster at 30 min and Munich at 40, and Wolfratshausen has an unusually strong job map for a town of 19,000.',
+    dogNotes:'Excellent. The Isar riverbanks, the Loisach meadows, and the Wolfratshausen forests give varied, quiet walking straight from town, and the Isar gravel banks are superb for swimming in summer. Good local vets, with Munich specialists 40 min away by train.',
+    housingNotes:'Cheaper than Starnberg but still an S-Bahn town in a desirable area — expect real competition. A 3BR house with garden runs roughly €1,400–2,000/month. Ground-floor flats with gardens do appear. Worth setting up alerts and being ready to move quickly.',
+    transportNotes:'S7 direct to Munich Marienplatz/HBF, ~40 min, every 20 minutes. Car useful for Penzberg, the lakes, and the mountains. Deutschlandticket covers the S-Bahn and the regional trains south.',
+    pros:['Roche Penzberg 20 min — ideal QA microbiology employer','40 min direct S7 to ADI Munich','Starnberger See 15 min, Kochelsee 30 min','Isar river walking and swimming for the dog','Alps 45 min south','Cheaper than Starnberg for a similar setting'],
+    cons:['Competitive rental market — desirable area','Not as cheap as the eastern or northern towns','Small town services','Little English outside Munich commuters'],
+    lakes:'Starnberger See (15 min), Kochelsee (30 min), Walchensee (40 min), Ammersee (40 min)',
+    alpsNote:'Alps 45 min south — Herzogstand and Benediktenwand within an hour; Zugspitze 1 h 15',
+    mapUrl:'https://maps.google.com/?q=Wolfratshausen,Germany',
+  },
+  {
+    id:'kempten', name:'Kempten (Allgäu)', nameDe:'Kempten im Allgäu', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Allgäu', dir:'SW', km:104, pop:'70,000', commuteMin:110,
+    commuteText:'~110 min to Munich', cost:'€1,300–2,000/mo',
+    sc:{commute:5, medDev:6, dog:9, housing:8, cost:8, alps:9, lakes:8, expat:5, rail:6},
+    highlight:'The capital of the Allgäu — a real city with the Alps behind it, mountain lakes all around, and some of the best-value housing in the zone. The commute is the price you pay.',
+    companies:[
+      {name:'Klinikverbund Allgäu — Klinikum Kempten', what:'The largest hospital in the Allgäu (~700 beds, academic teaching hospital) and the anchor of a regional hospital network. In-house hygiene and infection control, central sterilisation, and clinical device management. A substantial local employer.'},
+      {name:'Liebherr-Werk Kempten', what:'Not medtech, but one of the region\'s largest industrial employers with strong quality-engineering functions. Worth knowing for the local job market and the engineering community it sustains.'},
+      {name:'Klinikum Memmingen / Kaufbeuren (40 min)', what:'Two further regional hospitals in the Allgäu network, each with infection control and sterilisation functions — a wider local market than one town would suggest.'},
+      {name:'Full Munich medtech cluster (110 min)', what:'Direct trains reach Munich in about 1 h 50 — right at the edge of your two-hour limit and the longest German-side journey here. Best treated as an occasional option rather than a three-day-a-week habit.'},
+    ],
+    jobNotes:'Be clear-eyed about this one: at roughly 110 minutes, Munich is not a comfortable three-day commute. Kempten only works if your partner targets the Allgäu hospital network locally — which is real, with Kempten, Memmingen and Kaufbeuren all in reach — or if hybrid working reduces the office days.',
+    dogNotes:'Excellent. The Iller river valley, the Kempter Wald, and the Allgäu foothills give endless walking, and the higher Alps are 45 minutes away for weekends. Deeply outdoor culture. A city of 70,000 supports proper specialist vets and groomers, which the small Alpine towns do not.',
+    housingNotes:'Among the best value in the zone for a proper city. A 3BR house with enclosed garden is realistic at €1,100–1,600/month, with genuine choice. The Allgäu is popular with tourists but the permanent rental market is separate and much calmer than anywhere near Munich.',
+    transportNotes:'Direct trains to Munich in ~1 h 50, roughly hourly — the weak point. But Memmingen Airport (Allgäu Airport) is 40 min away with Ryanair routes including Dublin, which is a genuine advantage for trips home. Car needed for the mountains.',
+    pros:['Allgäu Alps 45 min — Oberstdorf and Nebelhorn within an hour','Substantial local hospital network (Kempten, Memmingen, Kaufbeuren)','Excellent housing value with gardens','A real city — proper services and specialist vets','Memmingen Airport 40 min with Dublin flights','Mountain lakes all around'],
+    cons:['110 min to ADI Munich — at the very limit for 3x/week','Rail service hourly rather than frequent','Small international community','Little English spoken','Car essential'],
+    lakes:'Alpsee (30 min), Forggensee (40 min), Grüntensee (30 min), Bodensee (1 h 15)',
+    alpsNote:'Allgäu Alps immediately south — Oberstdorf and the Nebelhorn ~1 hour; Neuschwanstein 45 min',
+    mapUrl:'https://maps.google.com/?q=Kempten,Allg%C3%A4u,Germany',
+  },
+
+  /* ───────── WEST ───────── */
+  {
+    id:'ffb', name:'Fürstenfeldbruck', nameDe:'Fürstenfeldbruck', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Amper Valley', dir:'W', km:24, pop:'38,000', commuteMin:25,
+    commuteText:'~25 min to Munich (S4)', cost:'€1,700–2,500/mo',
+    sc:{commute:10, medDev:6, dog:8, housing:6, cost:5, alps:4, lakes:6, expat:6, rail:9},
+    highlight:'A 25-minute S-Bahn ride from ADI, on the Amper river beside a baroque monastery — and 25 minutes the other way to the Ammersee. The easiest commute outside Munich itself.',
+    companies:[
+      {name:'Klinikum Fürstenfeldbruck (Kliniken FFB)', what:'District hospital serving the western Munich region, with infection control, central sterilisation, and medical device management functions. A convenient local option, though modest in scale.'},
+      {name:'Martinsried / Planegg biotech cluster (25 min)', what:'Munich\'s biotech and pharma hub is on this side of the city — dozens of companies plus the LMU Biocentre. QA, regulatory affairs, and laboratory roles, reachable in about 25 min.'},
+      {name:'Full Munich medtech cluster (25 min via S4)', what:'The S4 runs direct to the city centre, opening Brainlab, Siemens Healthineers, GE HealthCare, Medtronic and the full cluster with one of the shortest journeys on this list.'},
+      {name:'Augsburg — UKA & KUKA Medical (35 min)', what:'Heading west, Augsburg\'s university hospital and KUKA\'s medical robotics division are 35 min away, adding a second regional market.'},
+    ],
+    jobNotes:'Fürstenfeldbruck\'s strength is access rather than local employment: 25 min to central Munich, 25 min to the Martinsried biotech cluster on the same side of the city, and 35 min west to Augsburg. Few places give your partner three markets with such short journeys.',
+    dogNotes:'Very good. The Amper river runs through town with long green banks, the Fürstenfeld monastery grounds and the surrounding woods add variety, and the Ammersee is 25 minutes for weekends. Well served by vets, with Munich specialists a short train ride away.',
+    housingNotes:'Prices reflect the short commute — this is a well-known Munich commuter town. A 3BR with garden runs roughly €1,500–2,100/month and competition is real. Cheaper than Starnberg, dearer than the eastern towns. The Puchheim and Emmering edges are worth including in your search.',
+    transportNotes:'S4 direct to Munich Marienplatz/HBF, ~25 min, every 10–20 minutes at peak — one of the best-served lines in the network. Regional trains toward Augsburg also stop here. Munich Airport ~50 min. Car optional.',
+    pros:['25 min direct S4 to ADI — outstanding commute','Very frequent service, well inside the S-Bahn zone','Martinsried biotech cluster 25 min on the same side','Augsburg 35 min for a second market','Ammersee 25 min; Amper river walks in town','Local hospital in town'],
+    cons:['Competitive, well-known commuter market','Alps 1.5 hours south','Fairly suburban in character','Pricier than eastern towns at the same distance'],
+    lakes:'Ammersee (25 min), Wörthsee (20 min), Starnberger See (35 min), Wesslinger See (25 min)',
+    alpsNote:'Alps ~1.5 hours south by car; visible from the higher ground on clear days',
+    mapUrl:'https://maps.google.com/?q=F%C3%BCrstenfeldbruck,Germany',
+  },
+  {
+    id:'ulm', name:'Ulm', nameDe:'Ulm', country:'DE', flag:'🇩🇪',
+    region:'Baden-Württemberg, Germany — Danube', dir:'W', km:122, pop:'129,000', commuteMin:75,
+    commuteText:'~75 min to Munich (ICE)', cost:'€1,500–2,300/mo',
+    sc:{commute:7, medDev:8, dog:7, housing:6, cost:7, alps:4, lakes:4, expat:7, rail:8},
+    highlight:'The one location here outside Bavaria — a university city on the Danube with a genuine medical technology sector of its own, 75 minutes from ADI by ICE.',
+    companies:[
+      {name:'University Hospital Ulm (Universitätsklinikum Ulm)', what:'Large university hospital (~1,200 beds) with an Institute of Medical Microbiology and Hygiene, central sterilisation supply department, and clinical device management. One of the strongest hospital-side microbiology employers on this entire list.'},
+      {name:'Beurer GmbH', what:'Headquartered in Ulm. Manufactures medical and health devices — blood pressure monitors, thermometers, blood glucose meters, heat therapy and personal-care products. Quality management, regulatory affairs (EU MDR), and product testing roles in a genuine medical device manufacturer.'},
+      {name:'Institute for Laser Technologies in Medicine (ILM)', what:'Independent research institute working on medical laser applications, optical diagnostics, and device validation. Small but relevant for research-side quality and validation work.'},
+      {name:'Ulm Science Park / Uni Ulm', what:'A cluster of life-science and biotech spin-offs around the university campus, plus the medical faculty itself. Regular openings in laboratory quality, GMP, and regulatory support.'},
+      {name:'Full Munich medtech cluster (75 min)', what:'Direct ICE trains reach Munich HBF in ~75 min, roughly hourly, opening Brainlab, Siemens Healthineers, GE HealthCare, Medtronic and the full cluster.'},
+    ],
+    jobNotes:'Ulm is the strongest local job market west of Munich by a wide margin — a university hospital with its own microbiology and hygiene institute, plus Beurer as an actual device manufacturer in town. Your partner could realistically work locally, with Munich as a 75-minute fallback rather than a necessity.',
+    dogNotes:'Good rather than spectacular. The Danube and Blau riverside paths, the Friedrichsau park, and the wooded hills toward the Swabian Alb give solid everyday walking. A city of 129,000 with a medical faculty means excellent veterinary care and easy access to behaviour specialists — worth weighing for a dog with sensitivities.',
+    housingNotes:'A student city, so the market is busy but not brutal. A 3BR with garden runs roughly €1,300–1,800/month, better in Neu-Ulm across the river (technically Bavaria, slightly cheaper) or the outer districts like Wiblingen and Söflingen. Better value than Munich, more competition than the small towns.',
+    transportNotes:'Direct ICE to Munich HBF ~75 min and to Stuttgart ~55 min, roughly hourly. Note that ICE trains are not covered by the Deutschlandticket — budget for a BahnCard 50 or a season ticket, which changes the commuting maths compared with the regional-train locations. Good local tram and bus network.',
+    pros:['University hospital with its own microbiology and hygiene institute','Beurer — an actual medical device manufacturer in town','Strongest local job market west of Munich','75 min ICE to ADI, also 55 min to Stuttgart','Big student city — international, English common','Excellent veterinary and specialist services'],
+    cons:['ICE fares not covered by the Deutschlandticket — pricier commute','Alps ~1.5–2 hours away','Outside Bavaria — different state admin and school system','No lakes nearby; the Bodensee is 1 h 15'],
+    lakes:'Danube and Blau rivers; Bodensee (1 h 15); Blautopf spring (20 min)',
+    alpsNote:'Alps 1.5–2 hours south; the Swabian Alb hills start just outside the city',
+    mapUrl:'https://maps.google.com/?q=Ulm,Germany',
+  },
+
+  /* ───────── NORTH-WEST ───────── */
+  {
+    id:'dachau', name:'Dachau', nameDe:'Dachau', country:'DE', flag:'🇩🇪',
+    region:'Bavaria, Germany — Munich Belt', dir:'NW', km:17, pop:'48,000', commuteMin:22,
+    commuteText:'~22 min to Munich (S2)', cost:'€1,800–2,600/mo',
+    sc:{commute:10, medDev:7, dog:7, housing:6, cost:5, alps:3, lakes:4, expat:6, rail:9},
+    highlight:'The shortest commute of any location outside Munich — 22 minutes on the S2 — from a historic ducal town on the Amper with a palace, an old artists\' quarter, and Munich rents minus a third.',
+    companies:[
+      {name:'Helios Amper-Klinikum Dachau', what:'Regional hospital (~450 beds) in the Helios group, one of Germany\'s largest hospital operators. Infection control, central sterilisation supply, and medical device management functions — a real local employer within walking or cycling distance.'},
+      {name:'Full Munich medtech cluster (22 min via S2)', what:'The S2 reaches Munich city centre in 22 min, giving the shortest possible access to Brainlab, Siemens Healthineers, GE HealthCare, Medtronic, Stryker, Abbott and the full cluster short of living in the city.'},
+      {name:'Martinsried / Planegg biotech cluster (40 min)', what:'Munich\'s biotech hub, reachable by S2 plus U6. QA, regulatory, and laboratory roles across dozens of companies and the LMU Biocentre.'},
+      {name:'Augsburg — UKA & KUKA Medical (45 min)', what:'Augsburg\'s university hospital and KUKA\'s medical robotics division are 45 min west, adding a second regional market.'},
+    ],
+    jobNotes:'For pure job access without living in Munich, Dachau is the strongest position on this list — 22 minutes to the entire cluster, plus a hospital in town. It is the obvious choice if your partner\'s career comes first and the mountains can wait for weekends.',
+    dogNotes:'Better than its reputation suggests. The Amper river meadows and the Dachauer Moos nature area give large open green spaces right beside the town, and the palace court garden is pleasant for shorter walks. Well served by vets, with Munich specialists 20 minutes away — the easiest access to cooperative-care practitioners of any non-Munich location here.',
+    housingNotes:'Cheaper than Munich but firmly inside the commuter belt, so expect competition. A 3BR with garden runs roughly €1,500–2,100/month. The Dachau-Ost and Etzenhausen areas have more ground-floor flats and small houses. Set up alerts and be ready to view within a day or two.',
+    transportNotes:'S2 direct to Munich Marienplatz/HBF, ~22 min, every 10–20 minutes — the best-served connection outside the city. Regional trains toward Ingolstadt and Augsburg also call here. Munich Airport ~40 min. A car is genuinely optional.',
+    pros:['22 min to ADI — the shortest commute outside Munich','Very frequent S2 service','Local hospital in town (Helios Amper-Klinikum)','Munich specialist vets and services 20 min away','A third cheaper than equivalent Munich housing','Historic old town, palace, and Amper river meadows'],
+    cons:['Alps 1.5–2 hours south — weakest Alpine access nearby','No lakes worth the drive','The town\'s wartime history shapes its public image','Competitive commuter rental market'],
+    lakes:'Amper river; Karlsfelder See (10 min); Ammersee (45 min); Starnberger See (50 min)',
+    alpsNote:'Alps 1.5–2 hours south by car; visible from the palace terrace on clear days',
+    mapUrl:'https://maps.google.com/?q=Dachau,Germany',
   },
 ];
 
@@ -818,9 +1250,9 @@ document.getElementById('wt-btn').addEventListener('click', () => {
 /* ══════════════════════════════════════════
    FILTER / SORT
 ══════════════════════════════════════════ */
-document.querySelectorAll('.pill').forEach(p => {
+document.querySelectorAll('.pill[data-filter]').forEach(p => {
   p.addEventListener('click', () => {
-    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.pill[data-filter]').forEach(x => x.classList.remove('active'));
     p.classList.add('active');
     filter = p.dataset.filter;
     renderCards();
@@ -831,13 +1263,52 @@ document.getElementById('sort-sel').addEventListener('change', e => {
   renderCards();
 });
 
+/* ── Direction multiselect ── */
+function saveDirs() {
+  localStorage.setItem('rd-dirs', JSON.stringify([...dirSel]));
+}
+
+function buildDirBar() {
+  const counts = {};
+  LOCS.forEach(l => counts[l.dir] = (counts[l.dir] || 0) + 1);
+  const bar = document.getElementById('dir-bar');
+
+  bar.innerHTML = DIRS.filter(d => counts[d.key]).map(d => `
+    <button class="pill dir-pill${dirSel.has(d.key) ? ' active' : ''}"
+      data-dir="${d.key}" title="${d.full} of Munich"
+      aria-pressed="${dirSel.has(d.key)}">
+      <span class="dir-arrow">${d.arrow}</span>${d.label}<span class="dir-count">${counts[d.key]}</span>
+    </button>`).join('');
+
+  bar.querySelectorAll('.dir-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      const k = p.dataset.dir;
+      dirSel.has(k) ? dirSel.delete(k) : dirSel.add(k);
+      saveDirs();
+      buildDirBar();
+      renderCards();
+    });
+  });
+
+  document.getElementById('dir-clear').style.visibility = dirSel.size ? 'visible' : 'hidden';
+}
+
+document.getElementById('dir-clear').addEventListener('click', () => {
+  dirSel.clear();
+  saveDirs();
+  buildDirBar();
+  renderCards();
+});
+
 function getList() {
   let list = LOCS.map(l => ({...l, _s: weighted(l)}));
   if (filter === 'DE')  list = list.filter(l => l.country === 'DE');
   if (filter === 'AT')  list = list.filter(l => l.country === 'AT');
   if (filter === 'fav') list = list.filter(l => favs.includes(l.id));
+  if (dirSel.size)      list = list.filter(l => dirSel.has(l.dir));
   list.sort((a, b) => {
     if (sortBy === 'commute') return a.commuteMin - b.commuteMin;
+    if (sortBy === 'dist')    return a.km - b.km;
     if (sortBy === 'cost')    return b.sc.cost - a.sc.cost;
     if (sortBy === 'alps')    return b.sc.alps - a.sc.alps;
     if (sortBy === 'lakes')   return b.sc.lakes - a.sc.lakes;
@@ -847,14 +1318,38 @@ function getList() {
   return list;
 }
 
+/* Direction label helpers */
+function dirMeta(loc) {
+  return DIR_MAP[loc.dir] || {arrow:'', label:loc.dir, full:loc.dir};
+}
+function dirShort(loc) {
+  const d = dirMeta(loc);
+  return loc.dir === 'C' ? `${d.arrow} Munich city` : `${d.arrow} ${d.label} · ${loc.km} km`;
+}
+function dirLong(loc) {
+  const d = dirMeta(loc);
+  return loc.dir === 'C'
+    ? 'The ADI office is in this city'
+    : `${d.full} of Munich · ${loc.km} km as the crow flies`;
+}
+
 /* ══════════════════════════════════════════
    RENDER CARDS
 ══════════════════════════════════════════ */
 function renderCards() {
   const list = getList();
-  document.getElementById('rn').textContent =
-    `${list.length} location${list.length !== 1 ? 's' : ''} — tap a card to explore details`;
-  document.getElementById('grid').innerHTML = list.map(renderCard).join('');
+
+  const dirNote = dirSel.size
+    ? ` · ${DIRS.filter(d => dirSel.has(d.key)).map(d => d.arrow + ' ' + d.label).join(', ')} of Munich`
+    : '';
+  document.getElementById('rn').textContent = list.length
+    ? `${list.length} location${list.length !== 1 ? 's' : ''}${dirNote} — tap a card to explore details`
+    : `No locations match${dirNote}`;
+
+  document.getElementById('grid').innerHTML = list.length
+    ? list.map(renderCard).join('')
+    : `<div class="empty">🧭 Nothing matches this combination of filters.<br>
+         Try adding another direction, or clear the direction filter above.</div>`;
 
   // attach events
   document.querySelectorAll('.card').forEach(card => {
@@ -901,7 +1396,10 @@ function renderCard(loc) {
       </div>
     </div>
 
-    <div class="commute-pill">🚂 ${loc.commuteText}</div>
+    <div class="pill-row">
+      <div class="commute-pill">🚂 ${loc.commuteText}</div>
+      <div class="dir-chip" title="${dirLong(loc)}">${dirShort(loc)}</div>
+    </div>
 
     <div class="bars">
       ${CRITERIA.map(c => `
@@ -945,7 +1443,8 @@ function openModal(id) {
   const loc = activeLoc;
 
   document.getElementById('m-title').textContent = `${loc.flag} ${loc.name}`;
-  document.getElementById('m-sub').textContent = `${loc.region} · Pop. ${loc.pop}`;
+  document.getElementById('m-sub').textContent =
+    `${loc.region} · Pop. ${loc.pop} · ${dirLong(loc)}`;
   renderModalBody(loc);
   setTab('overview');
   document.getElementById('overlay').classList.add('open');
@@ -1010,6 +1509,7 @@ function renderModalBody(loc) {
         <div style="font-size:.72rem;color:var(--muted);margin-bottom:.2rem">MATCH SCORE</div>
         <div style="font-size:.85rem;color:var(--muted)">🚂 ${loc.commuteText}</div>
         <div style="font-size:.85rem;color:var(--muted);margin-top:.2rem">💶 ${loc.cost}</div>
+        <div style="font-size:.85rem;color:var(--muted);margin-top:.2rem">🧭 ${dirLong(loc)}</div>
       </div>
     </div>
 
@@ -1157,6 +1657,14 @@ function renderModalBody(loc) {
         <div class="info-val ${scoreClass(loc.sc.rail)}">${loc.sc.rail}/10</div>
         <div class="info-lbl">Rail Network Score</div>
       </div>
+      <div class="info-card">
+        <div class="info-val" style="color:var(--accent)">${dirMeta(loc).arrow} ${loc.dir === 'C' ? 'Munich' : dirMeta(loc).full}</div>
+        <div class="info-lbl">Direction from Munich</div>
+      </div>
+      <div class="info-card">
+        <div class="info-val">${loc.km === 0 ? '—' : loc.km + ' km'}</div>
+        <div class="info-lbl">Straight-line Distance</div>
+      </div>
     </div>
 
     <div class="stitle">Transport Details</div>
@@ -1212,6 +1720,7 @@ function saveNotes() {
    INIT
 ══════════════════════════════════════════ */
 buildWeightsPanel();
+buildDirBar();
 renderCards();
 </script>
 </body>
